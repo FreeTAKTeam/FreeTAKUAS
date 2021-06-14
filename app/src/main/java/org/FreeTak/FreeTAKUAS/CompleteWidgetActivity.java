@@ -79,7 +79,7 @@ public class CompleteWidgetActivity extends Activity {
     // every 3 seconds
     int delay = 3000;
 
-    public String FTS_IP, FTS_APIKEY, FTS_GUID, drone_name, rtmp_ip, rtmp_port;
+    public String FTS_IP, FTS_APIKEY, FTS_GUID, drone_name, rtmp_ip;
     public double droneLocationLat = 181.0, droneLocationLng = 181.0, droneLocationAlt = 0.0, droneDistance = 0.0, droneHeading = 0.0;
     public double homeLocationLat, homeLocationLng;
     public float gimbalPitch, gimbalRoll, gimbalYaw;
@@ -97,7 +97,6 @@ public class CompleteWidgetActivity extends Activity {
         FTS_APIKEY = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsapikey","0");
         drone_name = PreferenceManager.getDefaultSharedPreferences(this).getString("drone_name","");
         rtmp_ip = PreferenceManager.getDefaultSharedPreferences(this).getString("rtmp_ip","0");
-        //rtmp_port = PreferenceManager.getDefaultSharedPreferences(this).getString("rtmp_port","0");
         Toast.makeText(getApplicationContext(), String.format("FTS SERVER: %s\nFTS APIKey: %s", FTS_IP, FTS_APIKEY), Toast.LENGTH_SHORT).show();
         Toast.makeText(getApplicationContext(), String.format("RTMP SERVER: %s", rtmp_ip), Toast.LENGTH_SHORT).show();
 
@@ -254,7 +253,7 @@ public class CompleteWidgetActivity extends Activity {
             public void run() {
                 sensor_handler.postDelayed(sensor_runnable, delay);
                 //if (checkGpsCoordinates(droneLocationLat, droneLocationLng)) {
-                Toast.makeText(getApplicationContext(), String.format("Updating drone position: alt %f long %f lat %f distance %f heading %f",droneLocationAlt,droneLocationLng,droneLocationLat,droneDistance,droneHeading), Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), String.format("Updating drone position: alt %f long %f lat %f distance %f heading %f",droneLocationAlt,droneLocationLng,droneLocationLat,droneDistance,droneHeading), Toast.LENGTH_SHORT).show();
                     //Log.i(TAG, String.format("gimbal stats: pitch: %f roll %f yaw %f",gimbalPitch, gimbalRoll, gimbalYaw));
                     new SendCotTask(CompleteWidgetActivity.this).execute("sensor", FTS_IP, FTS_APIKEY, drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading);
                 //}
@@ -265,9 +264,9 @@ public class CompleteWidgetActivity extends Activity {
         stream_handler.postDelayed(stream_runnable = new Runnable() {
             public void run() {
                 stream_handler.postDelayed(stream_runnable, delay);
-                String rtmp_path = drone_name + new Random().nextInt(9999);
-                String live_url = "rtmp://" + rtmp_ip + "/LiveApp/" + rtmp_path;
-                Toast.makeText(getApplicationContext(), String.format("RTMP URL: %s", live_url), Toast.LENGTH_LONG).show();
+                String rtmp_path = "/LiveUAS/" + drone_name + new Random().nextInt(9999);
+                String live_url = "rtmp://" + rtmp_ip + rtmp_path;
+                Toast.makeText(getApplicationContext(), String.format("RTMP URL: %s", live_url), Toast.LENGTH_SHORT).show();
                 l = DJISDKManager.getInstance().getLiveStreamManager();
                 if (!l.isStreaming()) {
                     l.registerListener((x) -> {
@@ -287,10 +286,10 @@ public class CompleteWidgetActivity extends Activity {
                         });
                         Toast.makeText(getApplicationContext(), String.format("RTMP Stream error: %d\n-- Retrying", rc), Toast.LENGTH_LONG).show();
                     } else {
-                        Toast.makeText(getApplicationContext(), String.format("RTMP Stream Established"), Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), String.format("RTMP Stream Established"), Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Toast.makeText(getApplicationContext(), String.format("Drone is streaming\nSending Sensor CoT"), Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplicationContext(), String.format("Drone is streaming\nSending Sensor CoT"), Toast.LENGTH_SHORT).show();
                     new SendCotTask(CompleteWidgetActivity.this).execute("stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip, rtmp_path);
                 }
             }
@@ -403,7 +402,7 @@ public class CompleteWidgetActivity extends Activity {
 
     @Override
     protected void onPause() {
-        // stop the POST to fts
+        // stop the sensor cot generation
         sensor_handler.removeCallbacks(sensor_runnable);
         // stop the stream
         if (l.isStreaming()) {

@@ -75,7 +75,7 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
 
                 geoObject.put("streamAddress",RTMPaddr[0]);
                 geoObject.put("streamPort", RTMPaddr[1]);
-                geoObject.put("streamPath","/" + RTMPpath);
+                geoObject.put("streamPath",RTMPpath);
                 geoObject.put("alias", String.format("Drone Stream from %s",drone_name));
                 geoObject.put("streamProtocol","rtmp");
 
@@ -83,7 +83,7 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 method = "POST";
             }
 
-            Log.i(TAG, String.format("url: %s", url));
+            Log.i(TAG, String.format("REST API url: %s", url));
 
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setDoInput(true);
@@ -128,8 +128,8 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
     @Override
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
-        Log.i(TAG, "POST RESPONSE: " + result);
-        Toast.makeText(parent.getApplicationContext(), String.format("POST RESPONSE: %s",result), Toast.LENGTH_SHORT).show();
+        Log.i(TAG, "SERVER RESPONSE: " + result);
+        Toast.makeText(parent.getApplicationContext(), String.format("SERVER RESPONSE: %s",result), Toast.LENGTH_SHORT).show();
         try {
             JSONObject jsonObject = new JSONObject(result);
             if (jsonObject.get("Message").toString().equalsIgnoreCase("OK")) {
