@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"
+          package="org.FreeTak.FreeTAKUAS">
+
+    <!-- DJI SDK need these permissions -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <application
+        android:name=".MApplication"
+        android:usesCleartextTraffic="true"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        tools:replace="android:label, android:theme"
+        android:theme="@style/AppTheme"
+        tools:ignore="AllowBackup,GoogleAppIndexingWarning">
+
+        <!-- DJI SDK -->
+        <uses-library android:name="org.apache.http.legacy" android:required="false"/>
+        <uses-library android:name="com.android.future.usb.accessory" />
+
+        <meta-data
+            android:name="com.dji.sdk.API_KEY"
+            android:value="0a80e3b3467e19580f0e35df" />
+
+        <!-- Here Maps -->
+        <meta-data android:name="com.here.android.maps.appid"
+                   android:value="Enter your API key here"/>
+        <meta-data android:name="com.here.android.maps.apptoken"
+                   android:value="Enter your API key here"/>
+        <meta-data android:name="com.here.android.maps.license.key"
+                   android:value="Enter your API key here"/>
+
+        <service
+            android:name="com.here.android.mpa.service.MapService"
+            android:label="HereMapService">
+            <intent-filter>
+                <!--Note, action name should not be changed.-->
+                <action android:name="com.here.android.mpa.service.MapService.v3" />
+            </intent-filter>
+        </service>
+
+        <!-- Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="Enter your API key here"/>
+
+        <!-- AMaps -->
+        <meta-data
+            android:name="com.amap.api.v2.apikey"
+            android:value="Enter your API key here"/>
+
+        <activity
+            android:name=".MainActivity"
+            android:screenOrientation="sensorLandscape"
+            android:launchMode="singleTop"
+            android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".DJIConnectionControlActivity"
+            android:theme="@android:style/Theme.Translucent">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
+                android:resource="@xml/accessory_filter" />
+        </activity>
+        <activity
+            android:name=".CompleteWidgetActivity"
+            android:label="Default Widgets"
+            android:launchMode = "singleTop"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+
+        <activity
+            android:name=".CustomizedWidgetsActivity"
+            android:label="Customized Widgets"
+            android:launchMode = "singleTop"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
+
+        <activity
+            android:name=".MapWidgetActivity"
+            android:label="Map Widget"
+            android:launchMode = "singleTop"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/MapTheme" />
+
+    </application>
+
+</manifest>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:paddingStart="60dp"
+    android:paddingEnd="60dp">
+
+    <TableRow
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/complete_ui_widgets"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_margin="10dp"
+            android:padding="14dp"
+            android:text="Operate UAS"
+            android:textColor="@color/background_blue"
+            android:textSize="14sp" />
+        <Button
+            android:id="@+id/bt_customized_ui_widgets"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:padding="14dp"
+            android:text="Custom Widgets"
+            android:textColor="@color/background_blue"
+            android:textSize="14sp"
+            android:visibility="invisible" />
+
+        <Button
+            android:id="@+id/bt_map_widget"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:padding="14dp"
+            android:text="Map Widget Demo"
+            android:textColor="@color/background_blue"
+            android:textSize="14sp"
+            android:visibility="invisible" />
+    </TableRow>
+
+    <TableRow
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+
+        <EditText
+            android:id="@+id/edittext_fts_ip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_margin="10dp"
+            android:background="@color/gray"
+            android:digits="0123456789.:\n"
+            android:gravity="center"
+            android:hint="@string/fts_ip"
+            android:imeOptions="actionDone"
+            android:maxLength="20"
+            android:maxLines="1"
+            android:padding="2dp"
+            android:textColor="@color/white"
+            android:textColorHint="@android:color/white"
+            android:textSize="15sp" />
+
+        <EditText
+            android:id="@+id/edittext_fts_apikey"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_column="0"
+            android:layout_margin="10dp"
+            android:background="@color/gray"
+            android:gravity="center"
+            android:hint="@string/fts_apikey"
+            android:imeOptions="actionDone"
+            android:maxLength="32"
+            android:maxLines="1"
+            android:padding="2dp"
+            android:textColor="@color/white"
+            android:textColorHint="@android:color/white"
+            android:textSize="15sp" />
+    </TableRow>
+    <TableRow
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+    <EditText
+        android:id="@+id/edittext_rtmp_ip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_column="0"
+        android:layout_margin="10dp"
+        android:background="@color/gray"
+        android:digits="0123456789.:\n"
+        android:gravity="center"
+        android:hint="@string/rtmp_ip"
+        android:imeOptions="actionDone"
+        android:maxLength="20"
+        android:maxLines="1"
+        android:padding="2dp"
+        android:textColor="@color/white"
+        android:textColorHint="@android:color/white"
+        android:textSize="15sp" />
+
+    <!--
+    <EditText
+        android:id="@+id/edittext_rtmp_port"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:background="@color/gray"
+        android:gravity="center"
+        android:hint="@string/rtmp_port"
+        android:imeOptions="actionDone"
+        android:maxLength="15"
+        android:maxLines="1"
+        android:padding="2dp"
+        android:textColor="@color/white"
+        android:textColorHint="@android:color/white"
+        android:textSize="15sp" />
+-->
+    <EditText
+        android:id="@+id/edittext_drone_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_column="0"
+        android:layout_margin="10dp"
+        android:background="@color/gray"
+        android:gravity="center"
+        android:hint="@string/drone_name"
+        android:imeOptions="actionDone"
+        android:maxLength="15"
+        android:maxLines="1"
+        android:padding="2dp"
+        android:textColor="@color/white"
+        android:textColorHint="@android:color/white"
+        android:textSize="15sp" />
+    </TableRow>
+    <TextView
+        android:id="@+id/version"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        tools:text="DJI SDK Version" />
+
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/logo"
+        android:gravity="center"
+        android:padding="32dp"
+        android:src="@drawable/ftsuas_logo" />
+
+
+
+</TableLayout>

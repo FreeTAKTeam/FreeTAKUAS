@@ -1,0 +1,144 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+repositories {
+    mavenLocal()
+}
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion '29.0.3'
+    defaultConfig {
+        applicationId "org.FreeTak.FreeTAKUAS"
+        minSdkVersion 23
+        targetSdkVersion 29
+        multiDexEnabled true
+        vectorDrawables.useSupportLibrary = true
+        ndk {
+            // On x86 devices that run Android API 23 or above, if the application is targeted with API 23 or
+            // above, FFmpeg lib might lead to runtime crashes or warnings.
+            abiFilters 'armeabi-v7a', 'x86', 'arm64-v8a'
+        }
+    }
+    signingConfigs {
+        release {
+            storeFile file("../testbuild.jks")
+            storePassword "testbuild"
+            keyAlias "testbuild"
+            keyPassword "testbuild"
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+    dexOptions {
+        javaMaxHeapSize "3g"
+    }
+    lintOptions{
+        abortOnError false
+    }
+    packagingOptions{
+        doNotStrip "*/*/libdjivideo.so"
+        doNotStrip "*/*/libSDKRelativeJNI.so"
+        doNotStrip "*/*/libFlyForbid.so"
+        doNotStrip "*/*/libduml_vision_bokeh.so"
+        doNotStrip "*/*/libyuv2.so"
+        doNotStrip "*/*/libGroudStation.so"
+        doNotStrip "*/*/libFRCorkscrew.so"
+        doNotStrip "*/*/libUpgradeVerify.so"
+        doNotStrip "*/*/libFR.so"
+        doNotStrip "*/*/libDJIFlySafeCore.so"
+        doNotStrip "*/*/libdjifs_jni.so"
+        doNotStrip "*/*/libsfjni.so"
+        doNotStrip "*/*/libDJICommonJNI.so"
+        doNotStrip "*/*/libDJICSDKCommon.so"
+        doNotStrip "*/*/libDJIUpgradeCore.so"
+        doNotStrip "*/*/libDJIUpgradeJNI.so"
+        doNotStrip "*/*/libDJIWaypointV2Core.so"
+        doNotStrip "*/*/libAMapSDK_MAP_v6_9_2.so"
+        doNotStrip "*/*/libDJIMOP.so"
+        doNotStrip "*/*/libDJISDKLOGJNI.so"
+
+        pickFirst 'lib/*/libstlport_shared.so'
+        pickFirst 'lib/*/libRoadLineRebuildAPI.so'
+        pickFirst 'lib/*/libGNaviUtils.so'
+        pickFirst 'lib/*/libGNaviMapex.so'
+        pickFirst 'lib/*/libGNaviData.so'
+        pickFirst 'lib/*/libGNaviMap.so'
+        pickFirst 'lib/*/libGNaviSearch.so'
+        pickFirst 'lib/*/libDJIFlySafeCore.so'
+        pickFirst 'lib/*/libdjifs_jni.so'
+        pickFirst 'lib/*/libsfjni.so'
+        exclude 'META-INF/proguard/okhttp3.pro'
+        exclude 'META-INF/rxjava.properties'
+        exclude 'assets/location_map_gps_locked.png'
+        exclude 'assets/location_map_gps_3d.png'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation ('com.dji:dji-uxsdk:4.14', {
+        /**
+         * Uncomment the "library-anti-distortion" if your app does not need Anti Distortion for Mavic 2 Pro and Mavic 2 Zoom.
+         * Uncomment the "fly-safe-database" if you need database for release, or we will download it when DJISDKManager.getInstance().registerApp
+         * is called.
+         * Both will greatly reduce the size of the APK.
+         */
+        exclude module: 'library-anti-distortion'
+        exclude module: 'fly-safe-database'
+
+        /**
+         * Uncomment the following line to exclude amap from the app.
+         * Note that Google Play Store does not allow APKs that include this library.
+         */
+        // exclude group: 'com.amap.api'
+    })
+    /**
+     * Uncomment the following block if you are using an SDK version does not match the UX SDK
+     * version above. For example, this could be used if the SDK has a minor release version
+     * ahead of the UX SDK.
+     */
+    // implementation ('com.dji:dji-sdk:4.14', {
+    //    /**
+    //     * Uncomment the "library-anti-distortion" if your app does not need Anti Distortion for Mavic 2 Pro and Mavic 2 Zoom.
+    //     * Uncomment the "fly-safe-database" if you need database for release, or we will download it when DJISDKManager.getInstance().registerApp
+    //     * is called.
+    //     * Both will greatly reduce the size of the APK.
+    //     */
+    //     exclude module: 'library-anti-distortion'
+    //     exclude module: 'fly-safe-database'
+    //
+    //    /**
+    //     * Uncomment the following line to exclude amap from the app.
+    //     * Note that Google Play Store does not allow APKs that include this library.
+    //     */
+    //    // exclude group: 'com.amap.api'
+    // })
+    compileOnly ('com.dji:dji-sdk-provided:4.14')
+
+    // AMAP: Do not include if publishing to Google Play Store
+    implementation 'com.amap.api:3dmap:6.9.2'
+    implementation 'com.amap.api:search:6.9.2'
+    implementation 'com.amap.api:location:4.7.0'
+
+    implementation 'org.greenrobot:eventbus:3.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.2'
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
+    implementation 'androidx.annotation:annotation:1.0.0'
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.0.0-rc01'
+    implementation 'androidx.core:core:1.0.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+    //HERE maps
+    implementation files('libs/HERE-sdk-3.15.0.aar')
+
+}

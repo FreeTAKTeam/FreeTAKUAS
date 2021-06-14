@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <dji.ux.widget.MapWidget
+        android:id="@+id/map_widget"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true" />
+
+    <ScrollView
+        android:id="@+id/settings_scroll_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/toggles"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@color/dark_gray"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="5dp"
+                android:background="@color/transparent"
+                android:gravity="center"
+                android:padding="5dp"
+                android:text="Map Settings"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="@dimen/map_settings_item_seperator"
+                android:background="@color/blue" />
+
+            <RadioGroup
+                android:id="@+id/map_center_selector"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:background="@color/transparent"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@color/transparent"
+                    android:padding="5dp"
+                    android:text="Center Map"
+                    android:textColor="@color/white" />
+
+                <RadioButton
+                    android:id="@+id/map_center_aircraft"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/selector_map_type_bg"
+                    android:button="@null"
+                    android:checked="true"
+                    android:drawableLeft="@drawable/ic_compass_aircraft"
+                    android:drawableStart="@drawable/ic_compass_aircraft"
+                    android:padding="8dp"
+                    android:textColor="@drawable/selector_map_type_text" />
+
+                <RadioButton
+                    android:id="@+id/map_center_home"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/selector_map_type_bg"
+                    android:button="@null"
+                    android:drawableLeft="@drawable/ic_compass_home"
+                    android:drawableStart="@drawable/ic_compass_home"
+                    android:padding="8dp"
+                    android:textColor="@drawable/selector_map_type_text" />
+
+                <RadioButton
+                    android:id="@+id/map_center_none"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/selector_map_type_bg"
+                    android:button="@null"
+                    android:drawableLeft="@android:drawable/ic_notification_clear_all"
+                    android:drawableStart="@android:drawable/ic_notification_clear_all"
+                    android:padding="8dp"
+                    android:textColor="@drawable/selector_map_type_text" />
+
+            </RadioGroup>
+
+            <CheckBox
+                android:id="@+id/home_point"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:checked="true"
+                android:text="@string/show_home_point"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/login_state_indicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:text="@string/dji_account_indicator"
+                android:textColor="@color/white" />
+
+            <Spinner
+                android:id="@+id/map_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:background="@drawable/bg_spinner"
+                android:entries="@array/mapTypeArray"
+                android:paddingRight="30dp" />
+
+            <Button
+                android:id="@+id/btn_map_provider_test"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:background="@drawable/selector_map_type_bg"
+                android:padding="10dp"
+                android:text="Map Overlay" />
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_seperator"
+                android:background="@color/transparent"
+                android:gravity="center"
+                android:padding="5dp"
+                android:text="FlyZone Settings"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="@dimen/map_settings_item_seperator"
+                android:background="@color/blue" />
+
+            <CheckBox
+                android:id="@+id/flyzone_legend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:text="@string/fly_zone_legend"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/flyzone_unlock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:checked="true"
+                android:text="@string/unlock_flyzones"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btn_fly_zone"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:background="@drawable/selector_map_type_bg"
+                android:padding="10dp"
+                android:text="@string/fly_zone" />
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_seperator"
+                android:background="@color/transparent"
+                android:gravity="center"
+                android:padding="5dp"
+                android:text="Flight Settings"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="@dimen/map_settings_item_seperator"
+                android:background="@color/blue" />
+
+            <CheckBox
+                android:id="@+id/home_direction"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:checked="true"
+                android:text="@string/home_direction"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/lock_bounds"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:checked="true"
+                android:text="@string/auto_frame"
+                android:textColor="@color/white" />
+
+
+            <CheckBox
+                android:id="@+id/flight_path"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:checked="true"
+                android:text="@string/show_flight_path"
+                android:textColor="@color/white" />
+
+
+            <CheckBox
+                android:id="@+id/gimbal_yaw"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:checked="true"
+                android:text="@string/show_gimbal_yaw"
+                android:textColor="@color/white" />
+
+            <TextView
+
+                android:id="@+id/clear_flight_path"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:background="@drawable/selector_map_type_bg"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="@string/clear_flight_path"
+                android:textAllCaps="true"
+                android:textColor="@color/black" />
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_seperator"
+                android:background="@color/transparent"
+                android:gravity="center"
+                android:padding="5dp"
+                android:text="Other Settings"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="@dimen/map_settings_item_seperator"
+                android:background="@color/blue" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/transparent"
+                android:padding="5dp"
+                android:text="Icon Change Setting"
+                android:textColor="@color/white" />
+
+            <RelativeLayout
+                android:id="@+id/icons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <Spinner
+                    android:id="@+id/icon_spinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/map_settings_item_seperator"
+                    android:background="@drawable/bg_spinner"
+                    android:entries="@array/iconArray"
+                    android:paddingRight="30dp"
+                    android:spinnerMode="dropdown" />
+
+                <TextView
+                    android:id="@+id/replace"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/icon_spinner"
+                    android:layout_marginTop="@dimen/map_settings_item_seperator"
+                    android:background="@drawable/selector_map_type_bg"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:text="@string/replace_icon"
+                    android:textAllCaps="true"
+                    android:textColor="@color/black" />
+
+                <ImageView
+                    android:id="@+id/icon_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/replace"
+                    android:layout_marginTop="@dimen/map_settings_item_seperator"
+                    android:background="@drawable/selector_icon_bg"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_drone" />
+
+                <ImageView
+                    android:id="@+id/icon_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/replace"
+                    android:layout_marginTop="@dimen/map_settings_item_seperator"
+                    android:layout_toRightOf="@id/icon_1"
+                    android:background="@drawable/selector_icon_bg"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_butterfly" />
+
+                <ImageView
+                    android:id="@+id/icon_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/replace"
+                    android:layout_marginTop="@dimen/map_settings_item_seperator"
+                    android:layout_toRightOf="@id/icon_2"
+                    android:background="@drawable/selector_icon_bg"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_bird" />
+
+                <ImageView
+                    android:id="@+id/icon_4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/replace"
+                    android:layout_marginTop="@dimen/map_settings_item_seperator"
+                    android:layout_toRightOf="@id/icon_3"
+                    android:background="@drawable/selector_icon_bg"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_home" />
+
+                <ImageView
+                    android:id="@+id/icon_5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/replace"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="@dimen/map_settings_item_seperator"
+                    android:layout_toRightOf="@id/icon_4"
+                    android:background="@drawable/selector_icon_bg"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_cat" />
+
+
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/transparent"
+                android:padding="5dp"
+                android:text="Line Color Setting"
+                android:textColor="@color/white" />
+
+            <Spinner
+                android:id="@+id/line_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:background="@drawable/bg_spinner"
+                android:entries="@array/lineTypeArray"
+                android:paddingRight="30dp" />
+
+            <SeekBar
+                android:id="@+id/line_width_picker"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:max="100"
+                android:progress="5" />
+
+            <TextView
+                android:id="@+id/line_color"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/map_settings_item_seperator"
+                android:background="@drawable/selector_map_type_bg"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="@string/new_color"
+                android:textAllCaps="true" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <ImageButton
+        android:id="@+id/btn_settings"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_margin="5dp"
+        android:src="@drawable/camera_settings_other_highlight" />
+
+
+</RelativeLayout>

@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                xmlns:custom="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/activity_customized_widgets"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#242d34"
+                android:orientation="horizontal"
+                tools:context="org.FreeTak.FreeTAKUAS.CustomizedWidgetsActivity">
+
+    <dji.ux.widget.FPVWidget
+        android:id="@+id/fpv_custom_widget"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        custom:sourceCameraNameVisibility="true"
+        custom:videoSource="primary"/>
+
+    <dji.ux.widget.FPVOverlayWidget
+        android:id="@+id/fpv_overlay_widget"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        custom:overlayVideoSource="primary"/>
+    <FrameLayout
+        android:layout_width="160dp"
+        android:layout_height="90dp"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:background="@color/debug_2">
+        <dji.ux.widget.FPVWidget
+            android:id="@+id/secondary_fpv_custom_widget"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            custom:sourceCameraNameVisibility="true"
+            custom:videoSource="secondary"/>
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="#80000000"
+        android:id="@+id/topWidgetBar"
+        android:orientation="horizontal">
+
+        <!-- Show customized pre-flight status widget -->
+        <org.FreeTak.FreeTAKUAS.custom.CustomizedPreFlightWidget
+            android:id="@+id/status"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_gravity="center_vertical"
+            android:background="@color/transparent"
+            android:layout_marginLeft="35dp"/>
+        <dji.ux.panel.PreFlightCheckListPanel
+            android:id="@+id/pre_flight_check_list"
+            android:layout_width="400dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/signal"
+            custom:excludeItem="aircraftBatteryTemperature|aircraftBattery|visionSensors|ESCStatus|gimbalStatus|flightMode|IMUStatus|radioChannelQuality|remainingStorageCapacity|remoteControllerMode|remoteControllerBattery|overall|compass|maxFlightDistance|maxAltitude|internalStorage"
+            android:visibility="gone"/>
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <dji.ux.widget.BatteryWidget
+            android:layout_width="96dp"
+            android:layout_height="22dp"/>
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <dji.ux.widget.BatteryWidget
+            android:layout_width="96dp"
+            android:layout_height="22dp"
+            custom:excludeView="batteryIcon"/>
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <dji.ux.widget.BatteryWidget
+            android:layout_width="96dp"
+            android:layout_height="22dp"
+            custom:excludeView="percentage"/>
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <dji.ux.widget.BatteryWidget
+            android:layout_width="96dp"
+            android:layout_height="22dp"
+            custom:excludeView="batteryIcon|percentage"/>
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <dji.ux.widget.BatteryWidget
+            android:layout_width="96dp"
+            android:layout_height="22dp"
+            custom:excludeView="singleVoltage|doubleVoltage"/>
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <dji.ux.widget.BatteryWidget
+            android:layout_width="96dp"
+            android:layout_height="22dp"
+            custom:excludeView="singleVoltage|doubleVoltage|batteryIcon"/>
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <dji.ux.widget.BatteryWidget
+            android:layout_width="96dp"
+            android:layout_height="22dp"
+            custom:excludeView="singleVoltage|doubleVoltage|percentage"/>
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Show customized battery widget -->
+        <org.FreeTak.FreeTAKUAS.custom.CustomizedBatteryWidget
+            android:layout_width="96dp"
+            android:layout_height="22dp" />
+
+        <dji.ux.widget.FocusExposureSwitchWidget
+            android:layout_margin="10dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_gravity="right|top" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/topWidgetBar">
+
+        <LinearLayout
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:background="@color/dark_gray"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <CheckBox
+                android:id="@+id/checkbox_primary_camera_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/camera_name_primary"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/checkbox_secondary_camera_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/camera_name_secondary"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/checkbox_primary_camera_side"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/camera_side_primary"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/checkbox_secondary_camera_side"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/camera_side_secondary"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/checkbox_touch_focus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/focus_point"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/checkbox_touch_metering"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/metering_point"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/checkbox_gimbal_control"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/gimbal_control"
+                android:textColor="@color/white" />
+
+            <CheckBox
+                android:id="@+id/checkbox_display_grid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/display_grid"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:layout_marginTop="3dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/txt_grid_overlay_selection"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/grid_type_none"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginBottom="3dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/selector_map_type_bg"
+                android:text="@string/grid_type_none" />
+
+            <Button
+                android:id="@+id/grid_type_parallel"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginBottom="3dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/selector_map_type_bg"
+                android:text="@string/grid_type_parallel" />
+
+            <Button
+                android:id="@+id/grid_type_parallel_diagonal"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginBottom="3dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/selector_map_type_bg"
+                android:text="@string/grid_type_parallel_diagonal" />
+
+            <TextView
+                android:layout_marginTop="3dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/txt_video_feed_selection"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/primary_video_feed"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginBottom="3dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/selector_map_type_bg"
+                android:text="@string/set_primary_video_feed" />
+
+            <Button
+                android:id="@+id/secondary_video_feed"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginBottom="3dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/selector_map_type_bg"
+                android:text="@string/set_secondary_video_feed" />
+
+            <Button
+                android:id="@+id/auto_video_feed"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginBottom="3dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/selector_map_type_bg"
+                android:text="@string/set_auto_video_feed" />
+
+            <TextView
+                android:layout_marginTop="3dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="@string/txt_video_dynamic_size"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/change_size"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginBottom="3dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/selector_map_type_bg"
+                android:text="@string/set_fpv_size" />
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>
