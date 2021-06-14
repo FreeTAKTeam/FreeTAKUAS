@@ -124,7 +124,7 @@
         android:id="@+id/edittext_drone_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_column="0"
+        android:layout_column="1"
         android:layout_margin="10dp"
         android:background="@color/gray"
         android:gravity="center"
@@ -136,16 +136,19 @@
         android:textColor="@color/white"
         android:textColorHint="@android:color/white"
         android:textSize="15sp" />
-    </TableRow>
+
     <TextView
-        android:id="@+id/version"
-        android:layout_width="match_parent"
+        android:id="@+id/app_version"
+        android:layout_column="2"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
+        android:padding="2dp"
         android:gravity="center"
         android:textColor="@color/white"
         android:textSize="14sp"
-        tools:text="DJI SDK Version" />
+        tools:text="@string/app_version" />
+    </TableRow>
 
     <ImageView
         android:id="@+id/logo"
@@ -155,7 +158,6 @@
         android:gravity="center"
         android:padding="32dp"
         android:src="@drawable/ftsuas_logo" />
-
 
 
 </TableLayout>

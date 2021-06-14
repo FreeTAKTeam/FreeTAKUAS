@@ -75,14 +75,14 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         @Override
         public void onProductDisconnect() {
             Toast.makeText(getApplicationContext(),
-                           "product disconnect!",
+                           "UAS and Controller disconnect!",
                            Toast.LENGTH_LONG).show();
         }
 
         @Override
         public void onProductConnect(BaseProduct product) {
             Toast.makeText(getApplicationContext(),
-                           "product connect!",
+                           "UAS and Controller connected!",
                            Toast.LENGTH_LONG).show();
         }
         
@@ -95,10 +95,11 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         public void onComponentChange(BaseProduct.ComponentKey key,
                                       BaseComponent oldComponent,
                                       BaseComponent newComponent) {
+            /*
             Toast.makeText(getApplicationContext(),
                            key.toString() + " changed",
                            Toast.LENGTH_LONG).show();
-
+            */
         }
 
         @Override
@@ -151,7 +152,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     };
     private static final int REQUEST_PERMISSION_CODE = 12345;
     private List<String> missingPermission = new ArrayList<>();
-    private EditText FtsIpEditText, FtsApiEditText, DroneNameEditText, RtmpIpEditText, RtmpPortEditText;
+    private EditText FtsIpEditText, FtsApiEditText, DroneNameEditText, RtmpIpEditText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -161,8 +162,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         findViewById(R.id.complete_ui_widgets).setOnClickListener(this);
         findViewById(R.id.bt_customized_ui_widgets).setOnClickListener(this);
         findViewById(R.id.bt_map_widget).setOnClickListener(this);
-        TextView versionText = (TextView) findViewById(R.id.version);
-        versionText.setText(getResources().getString(R.string.sdk_version, DJISDKManager.getInstance().getSDKVersion()));
+        TextView versionText = (TextView) findViewById(R.id.app_version);
+        versionText.setText("FreeTAKUAS version 0.1");
         FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
         FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP,""));
         FtsIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -286,49 +287,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 }
             }
         });
-        /*
-        RtmpPortEditText = (EditText) findViewById(R.id.edittext_rtmp_port);
-        RtmpPortEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_PORT,""));
-        RtmpPortEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH
-                        || actionId == EditorInfo.IME_ACTION_DONE
-                        || event != null
-                        && event.getAction() == KeyEvent.ACTION_DOWN
-                        && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                    if (event != null && event.isShiftPressed()) {
-                        return false;
-                    } else {
-                        // the user is done typing.
-                        handleRtmpIpTextChange();
-                    }
-                }
-                return false; // pass on to other listeners.
-            }
-        });
-        RtmpPortEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (s != null && s.toString().contains("\n")) {
-                    // the user is done typing.
-                    // remove new line characcter
-                    final String currentText = RtmpPortEditText.getText().toString();
-                    RtmpPortEditText.setText(currentText.substring(0, currentText.indexOf('\n')));
-                    handleRtmpPortTextChange();
-                }
-            }
-        });
-         */
         DroneNameEditText = (EditText) findViewById(R.id.edittext_drone_name);
         DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME,""));
         DroneNameEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -510,7 +468,12 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         final String FtsIP = FtsIpEditText.getText().toString();
 
         if (!TextUtils.isEmpty(FtsIP)) {
-            Toast.makeText(getApplicationContext(),"FreeTAKServer\nIP: " + FtsIP,Toast.LENGTH_SHORT).show();
+            if (!FtsIP.contains(":")) {
+                Toast.makeText(getApplicationContext(),"ERROR: Bad IP:PORT",Toast.LENGTH_SHORT).show();
+                FtsIpEditText.setText("");
+                return;
+            }
+            Toast.makeText(getApplicationContext(),"FTS IP:PORT = " + FtsIP,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_FTS_IP,FtsIP).apply();
         }
     }
@@ -529,7 +492,12 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         final String rtmp_ip = RtmpIpEditText.getText().toString();
 
         if (!TextUtils.isEmpty(rtmp_ip)) {
-            Toast.makeText(getApplicationContext(),"RTMP IP: " + rtmp_ip,Toast.LENGTH_SHORT).show();
+            if (!rtmp_ip.contains(":")) {
+                Toast.makeText(getApplicationContext(),"ERROR: Bad IP:PORT",Toast.LENGTH_SHORT).show();
+                RtmpIpEditText.setText("");
+                return;
+            }
+            Toast.makeText(getApplicationContext(),"RTMP IP:PORT = " + rtmp_ip,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_RTMP_IP,rtmp_ip).apply();
         }
     }

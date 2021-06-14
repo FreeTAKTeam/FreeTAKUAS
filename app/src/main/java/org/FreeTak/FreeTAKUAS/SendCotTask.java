@@ -129,7 +129,8 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
         Log.i(TAG, "SERVER RESPONSE: " + result);
-        Toast.makeText(parent.getApplicationContext(), String.format("SERVER RESPONSE: %s",result), Toast.LENGTH_SHORT).show();
+        Toast.makeText(parent.getApplicationContext(), String.format("SERVER RESPONSE: %s",result), Toast.LENGTH_LONG).show();
+
         try {
             JSONObject jsonObject = new JSONObject(result);
             if (jsonObject.get("Message").toString().equalsIgnoreCase("OK")) {
