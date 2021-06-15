@@ -18,6 +18,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -55,7 +56,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final String LAST_USED_RTMP_PORT = "rtmp_port";
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static boolean isAppStarted = false;
+    private int ready = 0;
+
     private DJISDKManager.SDKManagerCallback registrationCallback = new DJISDKManager.SDKManagerCallback() {
+
 
         @Override
         public void onRegister(DJIError error) {
@@ -160,6 +164,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         setContentView(R.layout.activity_main);
         isAppStarted = true;
         findViewById(R.id.complete_ui_widgets).setOnClickListener(this);
+        ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [DISABLED]");
         findViewById(R.id.bt_customized_ui_widgets).setOnClickListener(this);
         findViewById(R.id.bt_map_widget).setOnClickListener(this);
         TextView versionText = (TextView) findViewById(R.id.app_version);
@@ -401,6 +406,14 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         int id = view.getId();
         if (id == R.id.complete_ui_widgets) {
             nextActivityClass = CompleteWidgetActivity.class;
+            if (enable_controller_button()) {
+                findViewById(R.id.complete_ui_widgets).setEnabled(true);
+                ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [ENABLED]");
+            }
+            else {
+                Toast.makeText(getApplicationContext(), "Configuration missing!", Toast.LENGTH_SHORT).show();
+                return;
+            }
         } else if (id == R.id.bt_customized_ui_widgets) {
             nextActivityClass = CustomizedWidgetsActivity.class;
         } else {
@@ -463,6 +476,12 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         return resultCode == ConnectionResult.SUCCESS;
     }
 
+    private boolean enable_controller_button() {
+        if (ready == 0xF)
+            return true;
+        return false;
+    }
+
     private void handleFtsIPTextChange() {
         // the user is done typing.
         final String FtsIP = FtsIpEditText.getText().toString();
@@ -475,6 +494,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
             Toast.makeText(getApplicationContext(),"FTS IP:PORT = " + FtsIP,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_FTS_IP,FtsIP).apply();
+            ready = ready | 1;
         }
     }
 
@@ -484,6 +504,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
 
         if (!TextUtils.isEmpty(FtsAPIKey)) {
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_FTS_API,FtsAPIKey).apply();
+            ready = ready | 2;
         }
     }
 
@@ -499,6 +520,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
             Toast.makeText(getApplicationContext(),"RTMP IP:PORT = " + rtmp_ip,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_RTMP_IP,rtmp_ip).apply();
+            ready = ready | 4;
         }
     }
 /*
@@ -519,6 +541,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         if (!TextUtils.isEmpty(drone_name)) {
             Toast.makeText(getApplicationContext(),"Drone Name: " + drone_name,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_DRONE_NAME,drone_name).apply();
+            ready = ready | 8;
         }
     }
 }

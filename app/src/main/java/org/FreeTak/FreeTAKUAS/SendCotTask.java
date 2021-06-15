@@ -38,7 +38,7 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
             String APIKEY = "Bearer " + (String) data[2];
             String drone_name = (String) data[3];
 
-            JSONObject geoObject = new JSONObject();
+            JSONObject jsonObject = new JSONObject();
 
             if (CotType.equalsIgnoreCase("sensor")) {
                 double altitude = (double) data[4];
@@ -47,24 +47,27 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 double distance = (double) data[7];
                 double heading = (double) data[8];
 
-                geoObject.put("longitude", longitude);
-                geoObject.put("latitude", latitude);
-                geoObject.put("distance", distance);
-                geoObject.put("bearing", heading);
-                geoObject.put("attitude", "friendly");
-                geoObject.put("geoObject", "Ground");
-                geoObject.put("how", "nonCoT");
-                geoObject.put("name", drone_name);
-                geoObject.put("timeout", 600);
+                jsonObject.put("longitude", longitude);
+                jsonObject.put("latitude", latitude);
+                jsonObject.put("distance", distance);
+                jsonObject.put("bearing", heading);
+                jsonObject.put("attitude", "friendly");
+                jsonObject.put("geoObject", "Ground");
+                jsonObject.put("how", "nonCoT");
+                jsonObject.put("name", drone_name);
+                //jsonObject.put("FieldOfView",0);
+                if (!parent.RTMP_URL.isEmpty())
+                    jsonObject.put("VideoURLUID", parent.RTMP_URL);
+                jsonObject.put("timeout", 600);
 
                 if (parent.FTS_GUID == null) {
                     url = new URL("http://" + FTSaddr + "/ManageGeoObject/postGeoObject");
                     method = "POST";
                 } else {
                     // PUT method in FTS 1.8 is broken, just use POST with uid
-                    //url = new URL("http://"+FTSaddr+":19023/ManageGeoObject/putGeoObject");
+                    //url = new URL("http://"+FTSaddr+":19023/ManageGeoObject/putSensorObject");
                     url = new URL("http://" + FTSaddr + "/ManageGeoObject/postGeoObject");
-                    geoObject.put("uid", parent.getDroneGUID());
+                    jsonObject.put("uid", parent.getDroneGUID());
                     // PUT method in FTS 1.8 is broken, just use POST with uid
                     //method = "PUT";
                     method = "POST";
@@ -73,11 +76,11 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 String[] RTMPaddr = ((String) data[4]).split(":");
                 String RTMPpath = (String) data[5];
 
-                geoObject.put("streamAddress",RTMPaddr[0]);
-                geoObject.put("streamPort", RTMPaddr[1]);
-                geoObject.put("streamPath",RTMPpath);
-                geoObject.put("alias", String.format("Drone Stream from %s",drone_name));
-                geoObject.put("streamProtocol","rtmp");
+                jsonObject.put("streamAddress",RTMPaddr[0]);
+                jsonObject.put("streamPort", RTMPaddr[1]);
+                jsonObject.put("streamPath",RTMPpath);
+                jsonObject.put("alias", String.format("Drone Stream from %s",drone_name));
+                jsonObject.put("streamProtocol","rtmp");
 
                 url = new URL("http://" + FTSaddr + "/ManageVideoStream/postVideoStream");
                 method = "POST";
@@ -93,7 +96,7 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
 
             OutputStream outputStream = new BufferedOutputStream(urlConnection.getOutputStream());
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, "utf-8"));
-            writer.write(geoObject.toString());
+            writer.write(jsonObject.toString());
             writer.flush();
             writer.close();
             outputStream.close();
@@ -112,13 +115,14 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 response += temp;
             }
             // put into JSONObject
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("Content", response);
-            jsonObject.put("Message", urlConnection.getResponseMessage());
-            jsonObject.put("Length", urlConnection.getContentLength());
-            jsonObject.put("Type", urlConnection.getContentType());
+            JSONObject ResponseObject = new JSONObject();
+            ResponseObject.put("Content", response);
+            ResponseObject.put("Code", urlConnection.getResponseCode());
+            ResponseObject.put("Message", urlConnection.getResponseMessage());
+            ResponseObject.put("Length", urlConnection.getContentLength());
+            ResponseObject.put("Type", urlConnection.getContentType());
             urlConnection.disconnect();
-            return jsonObject.toString();
+            return ResponseObject.toString();
         } catch (Exception e) {
             Log.i(TAG, e.toString());
             return e.toString();
@@ -133,11 +137,16 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
 
         try {
             JSONObject jsonObject = new JSONObject(result);
-            if (jsonObject.get("Message").toString().equalsIgnoreCase("OK")) {
-                String GUID = jsonObject.get("Content").toString();
-                Log.i(TAG,String.format("GUID from FTS: %s", GUID));
-                parent.setDroneGUID(GUID);
+            if (jsonObject.get("Code").toString().equalsIgnoreCase("200")) {
+                if (jsonObject.get("Message").toString().equalsIgnoreCase("OK")) {
+                    String GUID = jsonObject.get("Content").toString();
+                    Log.i(TAG, String.format("GUID from FTS: %s", GUID));
+                    parent.setDroneGUID(GUID);
+                }
             }
+            String Content = jsonObject.get("Content").toString();
+            if (Content.equalsIgnoreCase("this endpoint does not exist")) {
+            } else {}
         } catch (Exception e) {
             Log.i(this.getClass().getName(), e.toString());
         }

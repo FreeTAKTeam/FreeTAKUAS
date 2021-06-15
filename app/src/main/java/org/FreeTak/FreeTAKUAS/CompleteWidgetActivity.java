@@ -79,10 +79,11 @@ public class CompleteWidgetActivity extends Activity {
     // every 3 seconds
     int delay = 3000;
 
+    public String RTMP_URL = "";
     public String FTS_IP, FTS_APIKEY, FTS_GUID, drone_name, rtmp_ip;
     public double droneLocationLat, droneLocationLng, droneLocationAlt, droneDistance, droneHeading;
     public double homeLocationLat, homeLocationLng;
-    public float gimbalPitch, gimbalRoll, gimbalYaw;
+    public float gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,10 +94,10 @@ public class CompleteWidgetActivity extends Activity {
         width = DensityUtil.dip2px(this, 150);
         margin = DensityUtil.dip2px(this, 12);
 
-        FTS_IP = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsip","204.48.30.216:8087");
-        FTS_APIKEY = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsapikey","OrionLab11");
-        drone_name = PreferenceManager.getDefaultSharedPreferences(this).getString("drone_name","uas_dji");
-        rtmp_ip = PreferenceManager.getDefaultSharedPreferences(this).getString("rtmp_ip","172.30.254.237:1935");
+        FTS_IP = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsip","");
+        FTS_APIKEY = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsapikey","");
+        drone_name = PreferenceManager.getDefaultSharedPreferences(this).getString("drone_name","");
+        rtmp_ip = PreferenceManager.getDefaultSharedPreferences(this).getString("rtmp_ip","");
 
         WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         final Display display = windowManager.getDefaultDisplay();
@@ -281,7 +282,7 @@ public class CompleteWidgetActivity extends Activity {
                     public void run() {
                         stream_handler.postDelayed(stream_runnable, delay);
                         String rtmp_path = "/LiveUAS/" + drone_name /*+ new Random().nextInt(9999)*/;
-                        String live_url = "rtmp://" + rtmp_ip + rtmp_path;
+                        RTMP_URL = "rtmp://" + rtmp_ip + rtmp_path;
                         //Toast.makeText(getApplicationContext(), String.format("RTMP URL: %s", live_url), Toast.LENGTH_SHORT).show();
                         l = DJISDKManager.getInstance().getLiveStreamManager();
                         if (!l.isStreaming()) {
@@ -291,7 +292,7 @@ public class CompleteWidgetActivity extends Activity {
                             l.setAudioMuted(true);
                             l.setVideoSource(LiveStreamManager.LiveStreamVideoSource.Primary);
                             l.setVideoEncodingEnabled(true);
-                            l.setLiveUrl(live_url);
+                            l.setLiveUrl(RTMP_URL);
 
                             int rc = 0;
                             rc = l.startStream();
@@ -310,7 +311,7 @@ public class CompleteWidgetActivity extends Activity {
                                 Toast.makeText(getApplicationContext(), "RTMP Stream Established Successfully", Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            Toast.makeText(getApplicationContext(), "UAS streaming is active\nSending Sensor CoT", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getApplicationContext(), "UAS streaming is active\nSending 1 Stream CoT", Toast.LENGTH_LONG).show();
                             new SendCotTask(CompleteWidgetActivity.this).execute("stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip, rtmp_path);
 
                             // once the stream is up, stop sending the stream CoT
@@ -337,7 +338,6 @@ public class CompleteWidgetActivity extends Activity {
     }
 
     public static boolean checkGpsCoordinates(double latitude, double longitude) {
-        //return true;
         return (latitude > -90 && latitude < 90 && longitude > -180 && longitude < 180) && (latitude != 0f && longitude != 0f);
     }
 
@@ -414,6 +414,7 @@ public class CompleteWidgetActivity extends Activity {
                     gimbalPitch = attitude.getPitch();
                     gimbalRoll = attitude.getRoll();
                     gimbalYaw = attitude.getYaw();
+                    gimbalYawRelativeToAircraftHeading = gimbalCurrentState.getYawRelativeToAircraftHeading();
                 }
             });
             return true;
