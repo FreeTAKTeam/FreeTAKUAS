@@ -17,6 +17,10 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import dji.sdk.sdkmanager.DJISDKManager;
+
+import static java.lang.Math.tan;
+
 public class SendCotTask extends AsyncTask<Object, Void, String> {
 
     private CompleteWidgetActivity parent;
@@ -41,52 +45,60 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
             JSONObject jsonObject = new JSONObject();
 
             if (CotType.equalsIgnoreCase("sensor")) {
-                double altitude = (double) data[4];
-                double latitude = (double) data[5];
+                double altitude  = (double) data[4];
+                double latitude  = (double) data[5];
                 double longitude = (double) data[6];
-                double distance = (double) data[7];
-                double heading = (double) data[8];
+                double distance  = (double) data[7];
+                double heading   = (double) data[8];
+                double camera_fov  = (double) data[9];
+                double gimbalPitch = (double) data[10];
+                double gimbalRoll  = (double) data[11];
+                double gimbalYaw   = (double) data[12];
+                double gimbalYawRelativeToAircraftHeading = (double) data[13];
 
+                // the range to the target
+                double range = altitude / tan(gimbalYaw);
+
+                jsonObject.put("name", drone_name);
+                jsonObject.put("Bearing", String.valueOf(heading));
                 jsonObject.put("longitude", longitude);
                 jsonObject.put("latitude", latitude);
-                jsonObject.put("distance", distance);
-                jsonObject.put("bearing", heading);
-                jsonObject.put("attitude", "friendly");
-                jsonObject.put("geoObject", "Ground");
-                jsonObject.put("how", "nonCoT");
-                jsonObject.put("name", drone_name);
-                //jsonObject.put("FieldOfView",0);
-                if (!parent.RTMP_URL.isEmpty())
-                    jsonObject.put("VideoURLUID", parent.RTMP_URL);
-                jsonObject.put("timeout", 600);
+                jsonObject.put("FieldOfView", camera_fov);
+                jsonObject.put("Range", String.valueOf(range));
+                jsonObject.put("VideoURLUID", parent.RTMP_URL);
+
+                // earth diameter 6378.137
+                // pi 3.141597
+                // (1 / (((2 * 3.141597) / 360) * 6378.137)) / 1000 = 1 meter in degree
+                double m = range * 0.00000898314041297;
+                double spi_latitude  = latitude +  m;
+                double spi_longitude = longitude + m / Math.cos(latitude * (3.141597 / 180));
+
+                jsonObject.put("SPILongitude", spi_latitude);
+                jsonObject.put("SPILatitude", spi_longitude);
+                jsonObject.put("SPIName", String.format("%s SPI",drone_name));
 
                 if (parent.FTS_GUID == null) {
-                    url = new URL("http://" + FTSaddr + "/ManageGeoObject/postGeoObject");
-                    method = "POST";
+                    url = new URL("http://" + FTSaddr + "/Sensor/postDrone");
                 } else {
-                    // PUT method in FTS 1.8 is broken, just use POST with uid
-                    //url = new URL("http://"+FTSaddr+":19023/ManageGeoObject/putSensorObject");
-                    url = new URL("http://" + FTSaddr + "/ManageGeoObject/postGeoObject");
+                    // FTS bug, not supporting put
+                    //url = new URL("http://" + FTSaddr + "/Sensor/putDrone");
+                    url = new URL("http://" + FTSaddr + "/Sensor/postDrone");
                     jsonObject.put("uid", parent.getDroneGUID());
-                    // PUT method in FTS 1.8 is broken, just use POST with uid
                     //method = "PUT";
-                    method = "POST";
                 }
             } else if (CotType.equalsIgnoreCase("stream")) {
                 String[] RTMPaddr = ((String) data[4]).split(":");
-                String RTMPpath = (String) data[5];
 
                 jsonObject.put("streamAddress",RTMPaddr[0]);
                 jsonObject.put("streamPort", RTMPaddr[1]);
-                jsonObject.put("streamPath",RTMPpath);
-                jsonObject.put("alias", String.format("Drone Stream from %s",drone_name));
+                jsonObject.put("streamPath",String.format("/live/UAS-%s", drone_name));
+                jsonObject.put("alias", String.format("Drone Stream from UAS-%s",drone_name));
                 jsonObject.put("streamProtocol","rtmp");
 
                 url = new URL("http://" + FTSaddr + "/ManageVideoStream/postVideoStream");
                 method = "POST";
             }
-
-            Log.i(TAG, String.format("REST API url: %s", url));
 
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setDoInput(true);
@@ -124,7 +136,6 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
             urlConnection.disconnect();
             return ResponseObject.toString();
         } catch (Exception e) {
-            Log.i(TAG, e.toString());
             return e.toString();
         }
     }
@@ -133,7 +144,7 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
         Log.i(TAG, "SERVER RESPONSE: " + result);
-        Toast.makeText(parent.getApplicationContext(), String.format("SERVER RESPONSE: %s",result), Toast.LENGTH_LONG).show();
+        //Toast.makeText(parent.getApplicationContext(), String.format("SERVER RESPONSE: %s",result), Toast.LENGTH_LONG).show();
 
         try {
             JSONObject jsonObject = new JSONObject(result);

@@ -3,17 +3,20 @@ package org.FreeTak.FreeTAKUAS;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Display;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -25,6 +28,8 @@ import com.dji.mapkit.core.models.DJILatLng;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URL;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.Random;
 
 import dji.common.airlink.PhysicalSource;
@@ -36,15 +41,20 @@ import dji.common.gimbal.GimbalState;
 import dji.common.model.LocationCoordinate2D;
 import dji.keysdk.CameraKey;
 import dji.keysdk.KeyManager;
+import dji.keysdk.ProductKey;
 import dji.sdk.camera.VideoFeeder;
 import dji.sdk.flightcontroller.FlightController;
 import dji.sdk.gimbal.Gimbal;
 import dji.sdk.products.Aircraft;
 import dji.sdk.sdkmanager.DJISDKManager;
 import dji.sdk.sdkmanager.LiveStreamManager;
+import dji.ux.widget.FPVOverlayWidget;
 import dji.ux.widget.FPVWidget;
 import dji.ux.widget.MapWidget;
 import dji.ux.widget.controls.CameraControlsWidget;
+import dji.ux.widget.dashboard.CompassWidget;
+
+import static java.lang.Math.tan;
 
 /**
  * Activity that shows all the UI elements together
@@ -53,10 +63,13 @@ public class CompleteWidgetActivity extends Activity {
 
     private MapWidget mapWidget;
     private ViewGroup parentView;
+    private ImageView crossHairView;
     private FPVWidget fpvWidget;
     private FPVWidget secondaryFPVWidget;
+    private FPVOverlayWidget fpvOverlayWidget;
     private RelativeLayout primaryVideoView;
     private FrameLayout secondaryVideoView;
+    private CompassWidget compassWidget;
     private boolean isMapMini = true;
 
     private String TAG = this.getClass().getName();
@@ -71,13 +84,14 @@ public class CompleteWidgetActivity extends Activity {
     private FlightController mFlightController = null;
     private Gimbal mGimbal = null;
 
-
     // handlers will run the AsyncTask to talk to the FST REST API
     private final Handler sensor_handler = new Handler();
     private final Handler stream_handler = new Handler();
     private Runnable sensor_runnable, stream_runnable;
-    // every 3 seconds
-    int delay = 3000;
+    // every 1 second try to send a sensor cotee
+    int sensor_delay = 1000;
+    // every 3 seconds try to send a stream cot, stop when we send one successfully
+    int stream_delay = 3000;
 
     public String RTMP_URL = "";
     public String FTS_IP, FTS_APIKEY, FTS_GUID, drone_name, rtmp_ip;
@@ -98,6 +112,9 @@ public class CompleteWidgetActivity extends Activity {
         FTS_APIKEY = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsapikey","");
         drone_name = PreferenceManager.getDefaultSharedPreferences(this).getString("drone_name","");
         rtmp_ip = PreferenceManager.getDefaultSharedPreferences(this).getString("rtmp_ip","");
+
+        String rtmp_path = "/live/UAS-" + drone_name /*+ new Random().nextInt(9999)*/;
+        RTMP_URL = "rtmp://" + rtmp_ip + rtmp_path;
 
         WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         final Display display = windowManager.getDefaultDisplay();
@@ -234,7 +251,7 @@ public class CompleteWidgetActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-
+        //Toast.makeText(getApplicationContext(), String.format("Model: %s", DJISDKManager.getInstance().getProduct().getModel()),Toast.LENGTH_LONG).show();
         // Hide both the navigation bar and the status bar.
         View decorView = getWindow().getDecorView();
         decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -244,46 +261,86 @@ public class CompleteWidgetActivity extends Activity {
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
+        crossHairView = findViewById(R.id.crosshair);
+        crossHairView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    Toast.makeText(getApplicationContext(), "Sending GeoObject CoT (not really)", Toast.LENGTH_SHORT).show();
+                    // compute distance to center of fpv
+                    //(gimbalYaw/180)*3.141597*
+                    // the range to the target
+                    double range = droneLocationAlt / tan(gimbalYaw);
+                    // earth diameter 6378.137
+                    // pi 3.141597
+                    // (1 / (((2 * 3.141597) / 360) * 6378.137)) / 1000 = 1 meter in degree
+                    double m = range * 0.00000898314041297;
+                    double geoObjLat  = droneLocationLat +  m;
+                    double geoObjLng = droneLocationLng + m / Math.cos(droneLocationLat * (3.141597 / 180));
+                    String attitude = "pending";
+                    String geoObjName = "target";
+                    //new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, drone_name, geoObjLat, geoObjLng, attitude, geoObjName, gimbalYawRelativeToAircraftHeading);
+                }
+                return false;
+            }
+        });
+
         boolean controller_status = initFlightController();
         boolean gimbal_status = initGimbal();
         if (controller_status) {
             if (gimbal_status) {
+                Dictionary droneFoVs = new Hashtable();
+                droneFoVs.put("UNKNOWN_AIRCRAFT","0");
+                droneFoVs.put("INSPIRE_1","72");
+                droneFoVs.put("INSPIRE_1_PRO","72");
+                droneFoVs.put("INSPIRE_1_RAW","72");
+                droneFoVs.put("INSPIRE_2","72");
+                droneFoVs.put("PHANTOM_3_PROFESSIONAL","94");
+                droneFoVs.put("PHANTOM_3_ADVANCED","94");
+                droneFoVs.put("PHANTOM_3_STANDARD","94");
+                droneFoVs.put("Phantom_3_4K","94");
+                droneFoVs.put("PHANTOM_4","94");
+                droneFoVs.put("PHANTOM_4_PRO","94");
+                droneFoVs.put("PHANTOM_4_PRO_V2","94");
+                droneFoVs.put("P_4_MULTISPECTRAL","62.7");
+                droneFoVs.put("MAVIC_AIR_2","84");
+                droneFoVs.put("MAVIC_2_ENTERPRISE_ADVANCED","84");
+                droneFoVs.put("MAVIC_PRO","78.8");
+                droneFoVs.put("Spark","81.9");
+                droneFoVs.put("MAVIC_AIR","85");
+                droneFoVs.put("MAVIC_2_PRO","77");
+                droneFoVs.put("MAVIC_2_ZOOM","83");
+                droneFoVs.put("MAVIC_2","77");
+                droneFoVs.put("MAVIC_2_ENTERPRISE","82.6");
+                droneFoVs.put("MAVIC_2_ENTERPRISE_DUAL","85");
+                droneFoVs.put("MAVIC_MINI","83");
+
+                // dynamically determine what the camera lenses FoV is
+                double camera_fov = Double.parseDouble((String)droneFoVs.get(DJISDKManager.getInstance().getProduct().getModel()));
+
                 // send sensor CoTs while this activity is open and the drone has real gps data
                 sensor_handler.postDelayed(sensor_runnable = new Runnable() {
                     public void run() {
-                        sensor_handler.postDelayed(sensor_runnable, delay);
-                        if (checkGpsCoordinates(droneLocationLat, droneLocationLng) && FTS_IP != null && FTS_APIKEY != null && drone_name != null) {
+                        sensor_handler.postDelayed(sensor_runnable, sensor_delay);
+                        if (checkGpsCoordinates(droneLocationLat, droneLocationLng)) {
                             Log.i(TAG, String.format("Updating drone position: alt %f long %f lat %f distance %f heading %f", droneLocationAlt, droneLocationLng, droneLocationLat, droneDistance, droneHeading));
                             Log.i(TAG, String.format("gimbal stats: pitch: %f roll %f yaw %f", gimbalPitch, gimbalRoll, gimbalYaw));
-                            Toast.makeText(getApplicationContext(), "Sending UAS Location CoT", Toast.LENGTH_SHORT).show();
-                            new SendCotTask(CompleteWidgetActivity.this).execute("sensor", FTS_IP, FTS_APIKEY, drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading);
+                            //Toast.makeText(getApplicationContext(), "Sending UAS Location CoT", Toast.LENGTH_SHORT).show();
+                            new SendCotTask(CompleteWidgetActivity.this).execute("sensor", FTS_IP, FTS_APIKEY, drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, camera_fov, gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading);
                         } else {
-                            // inform user what went wrong
-                            if (FTS_IP == null)
-                                Toast.makeText(getApplicationContext(), "ERROR: FTS IP:PORT not set!", Toast.LENGTH_LONG).show();
-                            if (FTS_APIKEY == null)
-                                Toast.makeText(getApplicationContext(), "ERROR: FTS API Key not set!", Toast.LENGTH_LONG).show();
-                            if (rtmp_ip == null)
-                                Toast.makeText(getApplicationContext(), "ERROR: RTMP IP:PORT not set!", Toast.LENGTH_LONG).show();
-                            if (drone_name == null)
-                                Toast.makeText(getApplicationContext(), "ERROR: UAS Identifier not set!", Toast.LENGTH_LONG).show();
-
-                            if (!checkGpsCoordinates(droneLocationLat, droneLocationLng))
-                                Toast.makeText(getApplicationContext(), "ERROR: GPS not valid", Toast.LENGTH_LONG).show();
-
+                            Toast.makeText(getApplicationContext(), "ERROR: GPS not valid", Toast.LENGTH_LONG).show();
                             // stop the thread
-                            sensor_handler.removeCallbacks(sensor_runnable);
+                            //sensor_handler.removeCallbacks(sensor_runnable);
                         }
                     }
-                }, delay);
+                }, sensor_delay);
 
-                // send stream CoTs while this activity is open and the drone is streaming fpv
+                // send stream 1 stream CoT
                 stream_handler.postDelayed(stream_runnable = new Runnable() {
                     public void run() {
-                        stream_handler.postDelayed(stream_runnable, delay);
-                        String rtmp_path = "/LiveUAS/" + drone_name /*+ new Random().nextInt(9999)*/;
-                        RTMP_URL = "rtmp://" + rtmp_ip + rtmp_path;
-                        //Toast.makeText(getApplicationContext(), String.format("RTMP URL: %s", live_url), Toast.LENGTH_SHORT).show();
+                        stream_handler.postDelayed(stream_runnable, stream_delay);
+                        Log.i(TAG,String.format("RTMP URL: %s", RTMP_URL));
                         l = DJISDKManager.getInstance().getLiveStreamManager();
                         if (!l.isStreaming()) {
                             l.registerListener((x) -> {
@@ -303,7 +360,7 @@ public class CompleteWidgetActivity extends Activity {
                                 });
                                 // 254 probably means the user put the wrong IP:Port in
                                 if (rc == 254) {
-                                    Toast.makeText(getApplicationContext(), String.format("ERROR: RTMP Server error: %d\nCheck your RTMP configuration", rc), Toast.LENGTH_LONG).show();
+                                    Toast.makeText(getApplicationContext(), "ERROR: Check your RTMP configuration\nStopping stream attempts", Toast.LENGTH_LONG).show();
                                     // kill this thread, the IP:Port are bad
                                     stream_handler.removeCallbacks(stream_runnable);
                                 }
@@ -312,13 +369,12 @@ public class CompleteWidgetActivity extends Activity {
                             }
                         } else {
                             Toast.makeText(getApplicationContext(), "UAS streaming is active\nSending 1 Stream CoT", Toast.LENGTH_LONG).show();
-                            new SendCotTask(CompleteWidgetActivity.this).execute("stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip, rtmp_path);
-
+                            new SendCotTask(CompleteWidgetActivity.this).execute("stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
                             // once the stream is up, stop sending the stream CoT
                             stream_handler.removeCallbacks(stream_runnable);
                         }
                     }
-                }, delay);
+                }, stream_delay);
             }
             else {
                 Toast.makeText(getApplicationContext(), "ERROR: Gimbal did not init correctly\nCheck UAS is powered on", Toast.LENGTH_LONG).show();
@@ -436,12 +492,12 @@ public class CompleteWidgetActivity extends Activity {
     protected void onPause() {
         // stop the sensor cot generation
         Log.i(TAG, "Stopping sensor thread");
-        Toast.makeText(getApplicationContext(), "Stopping UAS Location CoT", Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), "Stopping UAS Location Updates", Toast.LENGTH_LONG).show();
         sensor_handler.removeCallbacks(sensor_runnable);
         // stop the stream
         if (l.isStreaming()) {
             Log.i(TAG, "Stopping stream thread");
-            Toast.makeText(getApplicationContext(), "Stopping Stream CoT", Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Stopping Stream", Toast.LENGTH_LONG).show();
             l.stopStream();
             stream_handler.removeCallbacks(stream_runnable);
         }

@@ -27,7 +27,20 @@
         android:id="@+id/fpv_overlay_widget"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
-
+    <ImageView
+        android:id="@+id/crosshair"
+        android:layout_width="128px"
+        android:layout_height="128px"
+        android:layout_centerInParent="true"
+        android:layout_gravity="center_vertical"
+        android:src="@drawable/crosshair"
+        android:contentDescription="Crosshair overlay for geoObjects" />
+<!--
+    <dji.ux.widget.FPVOverlayWidget
+        android:id="@+id/fpv_overlay_widget_cot_dropper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+-->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -160,7 +173,8 @@
         android:layout_marginRight="12dp"
         android:layout_marginBottom="12dp"
         android:layout_alignParentRight="true"
-        android:layout_alignParentBottom="true"/>
+        android:layout_alignParentBottom="true"
+        android:visibility="invisible"/>
 
     <!-- Everything below this line will appear on top of the full-screen map widget -->
 

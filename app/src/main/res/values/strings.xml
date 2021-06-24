@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">FreeTAK UAS</string>
-    <string name="app_version">FreeTAK UAS version 0.1</string>
+    <string name="app_version">FreeTAK UAS version 0.3</string>
     <string name="select_all">Select All</string>
     <string name="select_none">Select None</string>
     <string name="search">Search</string>

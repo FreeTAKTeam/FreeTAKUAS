@@ -53,7 +53,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final String LAST_USED_FTS_API = "ftsapikey";
     private static final String LAST_USED_DRONE_NAME = "drone_name";
     private static final String LAST_USED_RTMP_IP = "rtmp_ip";
-    private static final String LAST_USED_RTMP_PORT = "rtmp_port";
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static boolean isAppStarted = false;
     private int ready = 0;
@@ -67,7 +66,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             if (error == DJISDKError.REGISTRATION_SUCCESS) {
                 //loginAccount();
                 DJISDKManager.getInstance().startConnectionToProduct();
-
                 Toast.makeText(getApplicationContext(), "SDK registration succeeded!", Toast.LENGTH_LONG).show();
             } else {
 
@@ -88,6 +86,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             Toast.makeText(getApplicationContext(),
                            "UAS and Controller connected!",
                            Toast.LENGTH_LONG).show();
+            ready = ready | 16;
         }
         
         @Override
@@ -168,9 +167,9 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         findViewById(R.id.bt_customized_ui_widgets).setOnClickListener(this);
         findViewById(R.id.bt_map_widget).setOnClickListener(this);
         TextView versionText = (TextView) findViewById(R.id.app_version);
-        versionText.setText("FreeTAKUAS version 0.1");
+        //versionText.setText(R.id.app_version);
         FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
-        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP,""));
+        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP,"204.48.30.216:19023"));
         FtsIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -211,7 +210,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         FtsApiEditText = (EditText) findViewById(R.id.edittext_fts_apikey);
-        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API,""));
+        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API,"OrionLab11"));
         FtsApiEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -252,7 +251,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         RtmpIpEditText = (EditText) findViewById(R.id.edittext_rtmp_ip);
-        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP,""));
+        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP,"64.227.70.49:1935"));
         RtmpIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -293,7 +292,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         DroneNameEditText = (EditText) findViewById(R.id.edittext_drone_name);
-        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME,""));
+        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME,"djcombo"));
         DroneNameEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -334,6 +333,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         checkAndRequestPermissions();
+        handleFtsIPTextChange();
+        handleFtsApiKeyTextChange();
+        handleRtmpIpTextChange();
+        handleDroneNameTextChange();
     }
 
     @Override
@@ -406,12 +409,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         int id = view.getId();
         if (id == R.id.complete_ui_widgets) {
             nextActivityClass = CompleteWidgetActivity.class;
-            if (enable_controller_button()) {
-                findViewById(R.id.complete_ui_widgets).setEnabled(true);
-                ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [ENABLED]");
-            }
-            else {
-                Toast.makeText(getApplicationContext(), "Configuration missing!", Toast.LENGTH_SHORT).show();
+            if (!enable_controller_button()) {
+                Toast.makeText(getApplicationContext(), "No controller detected and/or FTS configuration is missing!", Toast.LENGTH_SHORT).show();
                 return;
             }
         } else if (id == R.id.bt_customized_ui_widgets) {
@@ -477,8 +476,11 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     }
 
     private boolean enable_controller_button() {
-        if (ready == 0xF)
+        if (ready == 0x1f) {
+            ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [READY]");
+            findViewById(R.id.complete_ui_widgets).setEnabled(true);
             return true;
+        }
         return false;
     }
 
@@ -495,6 +497,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             Toast.makeText(getApplicationContext(),"FTS IP:PORT = " + FtsIP,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_FTS_IP,FtsIP).apply();
             ready = ready | 1;
+            enable_controller_button();
         }
     }
 
@@ -505,6 +508,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         if (!TextUtils.isEmpty(FtsAPIKey)) {
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_FTS_API,FtsAPIKey).apply();
             ready = ready | 2;
+            enable_controller_button();
         }
     }
 
@@ -521,19 +525,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             Toast.makeText(getApplicationContext(),"RTMP IP:PORT = " + rtmp_ip,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_RTMP_IP,rtmp_ip).apply();
             ready = ready | 4;
+            enable_controller_button();
         }
     }
-/*
-    private void handleRtmpPortTextChange() {
-        // the user is done typing.
-        final String rtmp_port = RtmpPortEditText.getText().toString();
 
-        if (!TextUtils.isEmpty(rtmp_port)) {
-            Toast.makeText(getApplicationContext(),"RTMP Port: " + rtmp_port,Toast.LENGTH_SHORT).show();
-            PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_RTMP_PORT,rtmp_port).apply();
-        }
-    }
-*/
     private void handleDroneNameTextChange() {
         // the user is done typing.
         final String drone_name = DroneNameEditText.getText().toString();
@@ -542,6 +537,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             Toast.makeText(getApplicationContext(),"Drone Name: " + drone_name,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_DRONE_NAME,drone_name).apply();
             ready = ready | 8;
+            enable_controller_button();
         }
     }
 }
