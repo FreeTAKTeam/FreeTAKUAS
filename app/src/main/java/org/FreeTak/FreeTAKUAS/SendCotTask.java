@@ -5,6 +5,9 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.gson.annotations.JsonAdapter;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedOutputStream;
@@ -37,67 +40,102 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
             String method = "POST";
             URL url = null;
 
+            // core fields for all REST API endpoints
             String CotType = (String) data[0];
             String FTSaddr = (String) data[1];
             String APIKEY = "Bearer " + (String) data[2];
-            String drone_name = (String) data[3];
 
             JSONObject jsonObject = new JSONObject();
 
             if (CotType.equalsIgnoreCase("sensor")) {
-                double altitude  = (double) data[4];
-                double latitude  = (double) data[5];
-                double longitude = (double) data[6];
-                double distance  = (double) data[7];
-                double heading   = (double) data[8];
-                double camera_fov  = (double) data[9];
-                double gimbalPitch = (double) data[10];
-                double gimbalRoll  = (double) data[11];
-                double gimbalYaw   = (double) data[12];
-                double gimbalYawRelativeToAircraftHeading = (double) data[13];
-
-                // the range to the target
-                double range = altitude / tan(gimbalYaw);
+                String drone_name = (String) data[3];
+                float altitude    = (float) data[4];
+                double latitude   = (double) data[5];
+                double longitude  = (double) data[6];
+                double distance   = (double) data[7];
+                double heading    = (double) data[8];
+                String camera_fov = (String) data[9];
+                float gimbalPitch = (float) data[10];
+                float gimbalRoll  = (float) data[11];
+                float gimbalYaw   = (float) data[12];
+                float gimbalYawRelativeToAircraftHeading = (float) data[13];
 
                 jsonObject.put("name", drone_name);
                 jsonObject.put("Bearing", String.valueOf(heading));
                 jsonObject.put("longitude", longitude);
                 jsonObject.put("latitude", latitude);
                 jsonObject.put("FieldOfView", camera_fov);
-                jsonObject.put("Range", String.valueOf(range));
                 jsonObject.put("VideoURLUID", parent.RTMP_URL);
 
-                // earth diameter 6378.137
-                // pi 3.141597
-                // (1 / (((2 * 3.141597) / 360) * 6378.137)) / 1000 = 1 meter in degree
-                double m = range * 0.00000898314041297;
-                double spi_latitude  = latitude +  m;
-                double spi_longitude = longitude + m / Math.cos(latitude * (3.141597 / 180));
+                // the range to the target
+                // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
+                if (altitude < 1) altitude = 1.5f;
+                float range = altitude / (float) tan(gimbalPitch);
+                if (Float.isInfinite(range) || Float.isNaN(range))
+                    range = 2f;
 
-                jsonObject.put("SPILongitude", spi_latitude);
-                jsonObject.put("SPILatitude", spi_longitude);
-                jsonObject.put("SPIName", String.format("%s SPI",drone_name));
+                if (parent.getDroneSPI() == null) {
+                    // ref: https://stackoverflow.com/questions/7477003/calculating-new-longitude-latitude-from-old-n-meters
+                    // earth diameter 6378.137
+                    // pi 3.141597
+                    // (1 / (((2 * 3.141597) / 360) * 6378.137)) / 1000 = 1 meter in degree
+                    float m = range * 0.00000898314041297f;
+                    float spi_latitude = (float) latitude + m;
+                    float spi_longitude = (float) longitude + m / (float) Math.cos(latitude * (Math.PI / 180));
 
-                if (parent.FTS_GUID == null) {
-                    url = new URL("http://" + FTSaddr + "/Sensor/postDrone");
-                } else {
-                    // FTS bug, not supporting put
-                    //url = new URL("http://" + FTSaddr + "/Sensor/putDrone");
-                    url = new URL("http://" + FTSaddr + "/Sensor/postDrone");
-                    jsonObject.put("uid", parent.getDroneGUID());
-                    //method = "PUT";
+                    jsonObject.put("Range", String.valueOf(range));
+                    jsonObject.put("SPILongitude", spi_latitude);
+                    jsonObject.put("SPILatitude", spi_longitude);
+                    jsonObject.put("SPIName", String.format("%s_SPI", drone_name));
                 }
+                url = new URL("http://" + FTSaddr + "/Sensor/postDrone");
+
+                if (parent.getDroneGUID() != null) {
+                    // FTS bug, not supporting put
+                    //method = "PUT";
+                    //url = new URL("http://" + FTSaddr + "/Sensor/putDrone");
+                    jsonObject.put("uid", parent.getDroneGUID());
+                }
+            } else if (CotType.equalsIgnoreCase("SPI")) {
+                float spi_latitude  = (float) data[3];
+                float spi_longitude = (float) data[4];
+                String name          = (String) data[5];
+
+                jsonObject.put("uid", parent.getDroneSPI());
+                jsonObject.put("timeout",300);
+                jsonObject.put("longitude", spi_longitude);
+                jsonObject.put("latitude", spi_latitude);
+                jsonObject.put("droneUid", parent.getDroneGUID());
+                jsonObject.put("name", name);
+
+                url = new URL("http://" + FTSaddr + "/Sensor/postSPI");
+            } else if (CotType.equalsIgnoreCase("geoObject")) {
+                double latitude  = (double) data[3];
+                double longitude = (double) data[4];
+                String attitude  = (String) data[5];
+                String name      = (String) data[6];
+                float gimbalYawRelativeToAircraftHeading = (float) data[7];
+
+                jsonObject.put("longitude", longitude);
+                jsonObject.put("latitude", latitude);
+                jsonObject.put("attitude", attitude);
+                jsonObject.put("how", "nonCoT");
+                jsonObject.put("name", name);
+                jsonObject.put("Bearing", gimbalYawRelativeToAircraftHeading);
+                jsonObject.put("timeout",6000);
+
+                url = new URL("http://" + FTSaddr + "/ManageGeoObject/postGeoObject");
             } else if (CotType.equalsIgnoreCase("stream")) {
+                String drone_name = (String) data[3];
                 String[] RTMPaddr = ((String) data[4]).split(":");
 
                 jsonObject.put("streamAddress",RTMPaddr[0]);
                 jsonObject.put("streamPort", RTMPaddr[1]);
                 jsonObject.put("streamPath",String.format("/live/UAS-%s", drone_name));
-                jsonObject.put("alias", String.format("Drone Stream from UAS-%s",drone_name));
+                jsonObject.put("alias", String.format("Video stream from UAS-%s",drone_name));
                 jsonObject.put("streamProtocol","rtmp");
 
                 url = new URL("http://" + FTSaddr + "/ManageVideoStream/postVideoStream");
-                method = "POST";
             }
 
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
@@ -150,16 +188,23 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
             JSONObject jsonObject = new JSONObject(result);
             if (jsonObject.get("Code").toString().equalsIgnoreCase("200")) {
                 if (jsonObject.get("Message").toString().equalsIgnoreCase("OK")) {
-                    String GUID = jsonObject.get("Content").toString();
-                    Log.i(TAG, String.format("GUID from FTS: %s", GUID));
-                    parent.setDroneGUID(GUID);
+                    try {
+                        JSONObject GUID = new JSONObject(jsonObject.get("Content").toString());
+                        String drone_guid = GUID.get("DRONE_UID").toString();
+                        String spi_guid = GUID.get("SPI_UID").toString();
+                        Log.i(TAG, String.format("DRONE_UID from FTS: %s", drone_guid));
+                        Log.i(TAG, String.format("SPI_UID from FTS: %s", spi_guid));
+                        parent.setDroneGUID(drone_guid);
+                        parent.setDroneSPI(spi_guid);
+                        Log.i(TAG, String.format("Set DRONE_UID to %s", parent.getDroneGUID()));
+                        Log.i(TAG, String.format("Set SPI_UID to %s", parent.getDroneSPI()));
+                    } catch (JSONException e) {
+                        Log.i(TAG, String.format("GeoObject|VideoStream|SPI UID: %s", jsonObject.get("Content").toString()));
+                    }
                 }
             }
-            String Content = jsonObject.get("Content").toString();
-            if (Content.equalsIgnoreCase("this endpoint does not exist")) {
-            } else {}
         } catch (Exception e) {
-            Log.i(this.getClass().getName(), e.toString());
+            Log.i(TAG, e.toString());
         }
     }
 }

@@ -74,6 +74,7 @@ public class CompleteWidgetActivity extends Activity {
 
     private String TAG = this.getClass().getName();
 
+    private String FTS_DRONE_UID, DRONE_SPI_UID;
     private int height;
     private int width;
     private int margin;
@@ -94,10 +95,10 @@ public class CompleteWidgetActivity extends Activity {
     int stream_delay = 3000;
 
     public String RTMP_URL = "";
-    public String FTS_IP, FTS_APIKEY, FTS_GUID, drone_name, rtmp_ip;
-    public double droneLocationLat, droneLocationLng, droneLocationAlt, droneDistance, droneHeading;
+    public String FTS_IP, FTS_APIKEY, drone_name, rtmp_ip;
+    public double droneLocationLat, droneLocationLng, droneDistance, droneHeading;
     public double homeLocationLat, homeLocationLng;
-    public float gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading;
+    public float droneLocationAlt, gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -267,20 +268,28 @@ public class CompleteWidgetActivity extends Activity {
             public boolean onTouch(View v, MotionEvent event) {
 
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    Toast.makeText(getApplicationContext(), "Sending GeoObject CoT (not really)", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Sending GeoObject CoT", Toast.LENGTH_SHORT).show();
                     // compute distance to center of fpv
-                    //(gimbalYaw/180)*3.141597*
                     // the range to the target
-                    double range = droneLocationAlt / tan(gimbalYaw);
+                    float range;
+                    if (droneLocationAlt < 1)
+                        range = 1.5f / (float) tan(gimbalPitch);
+                    else
+                        range = droneLocationAlt / (float) tan(gimbalPitch);
+
+                    if (Float.isInfinite(range) || Float.isNaN(range))
+                        range = 2f;
+
                     // earth diameter 6378.137
                     // pi 3.141597
                     // (1 / (((2 * 3.141597) / 360) * 6378.137)) / 1000 = 1 meter in degree
-                    double m = range * 0.00000898314041297;
+                    double m = range * 0.00000898314041297d;
                     double geoObjLat  = droneLocationLat +  m;
-                    double geoObjLng = droneLocationLng + m / Math.cos(droneLocationLat * (3.141597 / 180));
+                    double geoObjLng = droneLocationLng + m / Math.cos(droneLocationLat * (Math.PI / 180));
                     String attitude = "pending";
                     String geoObjName = "target";
-                    //new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, drone_name, geoObjLat, geoObjLng, attitude, geoObjName, gimbalYawRelativeToAircraftHeading);
+                    Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f",geoObjLat,geoObjLng));
+                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLat, geoObjLng, attitude, geoObjName, gimbalYawRelativeToAircraftHeading);
                 }
                 return false;
             }
@@ -317,7 +326,7 @@ public class CompleteWidgetActivity extends Activity {
                 droneFoVs.put("MAVIC_MINI","83");
 
                 // dynamically determine what the camera lenses FoV is
-                double camera_fov = Double.parseDouble((String)droneFoVs.get(DJISDKManager.getInstance().getProduct().getModel()));
+                String camera_fov = droneFoVs.get(DJISDKManager.getInstance().getProduct().getModel().toString()).toString();
 
                 // send sensor CoTs while this activity is open and the drone has real gps data
                 sensor_handler.postDelayed(sensor_runnable = new Runnable() {
@@ -328,8 +337,30 @@ public class CompleteWidgetActivity extends Activity {
                             Log.i(TAG, String.format("gimbal stats: pitch: %f roll %f yaw %f", gimbalPitch, gimbalRoll, gimbalYaw));
                             //Toast.makeText(getApplicationContext(), "Sending UAS Location CoT", Toast.LENGTH_SHORT).show();
                             new SendCotTask(CompleteWidgetActivity.this).execute("sensor", FTS_IP, FTS_APIKEY, drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, camera_fov, gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading);
+                            if (getDroneSPI() != null) {
+                                Log.i(TAG, "Sending postSPI");
+                                // the range to the target
+                                // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
+                                float range;
+                                if (droneLocationAlt < 1)
+                                    range = 1.5f / (float) tan(gimbalPitch);
+                                else
+                                    range = droneLocationAlt / (float) tan(gimbalPitch);
+
+                                if (Float.isInfinite(range) || Float.isNaN(range))
+                                    range = 2f;
+
+                                // ref: https://stackoverflow.com/questions/7477003/calculating-new-longitude-latitude-from-old-n-meters
+                                // earth diameter 6378.137
+                                // pi 3.141597
+                                // (1 / (((2 * 3.141597) / 360) * 6378.137)) / 1000 = 1 meter in degree
+                                float m = range * 0.00000898314041297f;
+                                float spi_latitude = (float) droneLocationLat + m;
+                                float spi_longitude = (float) droneLocationLng + m / (float) Math.cos(droneLocationLat * (Math.PI / 180));
+                                new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spi_latitude, spi_longitude, "PlaceHolderName");
+                            }
                         } else {
-                            Toast.makeText(getApplicationContext(), "ERROR: GPS not valid", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getApplicationContext(), "ERROR: GPS not valid", Toast.LENGTH_SHORT).show();
                             // stop the thread
                             //sensor_handler.removeCallbacks(sensor_runnable);
                         }
@@ -377,11 +408,11 @@ public class CompleteWidgetActivity extends Activity {
                 }, stream_delay);
             }
             else {
-                Toast.makeText(getApplicationContext(), "ERROR: Gimbal did not init correctly\nCheck UAS is powered on", Toast.LENGTH_LONG).show();
+                //Toast.makeText(getApplicationContext(), "ERROR: Gimbal did not init correctly\nCheck UAS is powered on", Toast.LENGTH_LONG).show();
             }
         }
         else {
-            Toast.makeText(getApplicationContext(), "ERROR: Flight Controller did not init\nCheck USB connection to controller", Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(), "ERROR: Flight Controller did not init\nCheck USB connection to controller", Toast.LENGTH_LONG).show();
         }
 
         mapWidget.onResume();
@@ -434,6 +465,7 @@ public class CompleteWidgetActivity extends Activity {
      * el2 End altitude in meters
      * @returns Distance in Meters
      */
+    //Haversine Distance Algorithm
     public static double distance(double lat1, double lat2, double lon1,
                                   double lon2, double el1, double el2) {
 
@@ -480,12 +512,20 @@ public class CompleteWidgetActivity extends Activity {
         }
     }
 
+    public void setDroneSPI(String uid) {
+        DRONE_SPI_UID = uid;
+    }
+
+    public String getDroneSPI() {
+        return DRONE_SPI_UID;
+    }
+
     public void setDroneGUID(String uid) {
-        FTS_GUID = uid;
+        FTS_DRONE_UID = uid;
     }
 
     public String getDroneGUID() {
-        return FTS_GUID;
+        return FTS_DRONE_UID;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.FreeTak.FreeTAKUAS;
 
+import org.FreeTak.FreeTAKUAS.R;
+
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
@@ -79,6 +81,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             Toast.makeText(getApplicationContext(),
                            "UAS and Controller disconnect!",
                            Toast.LENGTH_LONG).show();
+            ready = ready ^ 16;
         }
 
         @Override
@@ -163,11 +166,11 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         setContentView(R.layout.activity_main);
         isAppStarted = true;
         findViewById(R.id.complete_ui_widgets).setOnClickListener(this);
-        ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [DISABLED]");
+        ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [NOT READY]");
         findViewById(R.id.bt_customized_ui_widgets).setOnClickListener(this);
         findViewById(R.id.bt_map_widget).setOnClickListener(this);
         TextView versionText = (TextView) findViewById(R.id.app_version);
-        //versionText.setText(R.id.app_version);
+        versionText.setText(R.string.app_version);
         FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
         FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP,"204.48.30.216:19023"));
         FtsIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -342,6 +345,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     @Override
     protected void onDestroy() {
         DJISDKManager.getInstance().destroy();
+        ready = 0;
         isAppStarted = false;
         super.onDestroy();
     }
@@ -416,7 +420,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         } else if (id == R.id.bt_customized_ui_widgets) {
             nextActivityClass = CustomizedWidgetsActivity.class;
         } else {
-            //nextActivityClass = MapWidgetActivity.class;
+            nextActivityClass = MapWidgetActivity.class;
             PopupMenu popup = new PopupMenu(this, view);
             popup.setOnMenuItemClickListener(this);
             Menu popupMenu = popup.getMenu();
@@ -481,6 +485,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             findViewById(R.id.complete_ui_widgets).setEnabled(true);
             return true;
         }
+        ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [NOT READY]");
+        findViewById(R.id.complete_ui_widgets).setEnabled(false);
         return false;
     }
 
@@ -494,7 +500,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 FtsIpEditText.setText("");
                 return;
             }
-            Toast.makeText(getApplicationContext(),"FTS IP:PORT = " + FtsIP,Toast.LENGTH_SHORT).show();
+//            Toast.makeText(getApplicationContext(),"FTS IP:PORT = " + FtsIP,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_FTS_IP,FtsIP).apply();
             ready = ready | 1;
             enable_controller_button();
@@ -522,7 +528,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 RtmpIpEditText.setText("");
                 return;
             }
-            Toast.makeText(getApplicationContext(),"RTMP IP:PORT = " + rtmp_ip,Toast.LENGTH_SHORT).show();
+//            Toast.makeText(getApplicationContext(),"RTMP IP:PORT = " + rtmp_ip,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_RTMP_IP,rtmp_ip).apply();
             ready = ready | 4;
             enable_controller_button();
@@ -534,7 +540,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         final String drone_name = DroneNameEditText.getText().toString();
 
         if (!TextUtils.isEmpty(drone_name)) {
-            Toast.makeText(getApplicationContext(),"Drone Name: " + drone_name,Toast.LENGTH_SHORT).show();
+//            Toast.makeText(getApplicationContext(),"Drone Name: " + drone_name,Toast.LENGTH_SHORT).show();
             PreferenceManager.getDefaultSharedPreferences(this).edit().putString(LAST_USED_DRONE_NAME,drone_name).apply();
             ready = ready | 8;
             enable_controller_button();
