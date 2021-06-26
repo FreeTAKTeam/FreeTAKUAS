@@ -414,7 +414,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         if (id == R.id.complete_ui_widgets) {
             nextActivityClass = CompleteWidgetActivity.class;
             if (!enable_controller_button()) {
-                Toast.makeText(getApplicationContext(), "No controller detected and/or FTS configuration is missing!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "No controller detected and/or configuration is missing!", Toast.LENGTH_SHORT).show();
                 return;
             }
         } else if (id == R.id.bt_customized_ui_widgets) {
@@ -486,7 +486,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             return true;
         }
         ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [NOT READY]");
-        findViewById(R.id.complete_ui_widgets).setEnabled(false);
         return false;
     }
 

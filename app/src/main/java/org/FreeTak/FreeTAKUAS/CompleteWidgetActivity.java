@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.amap.api.maps.model.LatLng;
 import com.dji.mapkit.core.maps.DJIMap;
 import com.dji.mapkit.core.models.DJILatLng;
 
@@ -273,12 +274,16 @@ public class CompleteWidgetActivity extends Activity {
                     // the range to the target
                     float range;
                     if (droneLocationAlt < 1)
-                        range = 1.5f / (float) tan(gimbalPitch);
+                        range = 0.001f / (float) tan(gimbalPitch);
                     else
                         range = droneLocationAlt / (float) tan(gimbalPitch);
 
                     if (Float.isInfinite(range) || Float.isNaN(range))
-                        range = 2f;
+                        range = 0.001f;
+
+                    range = Math.abs(range);
+
+                    Log.i(TAG, String.format("GeoObject Range: %f", range));
 
                     // earth diameter 6378.137
                     // pi 3.141597
@@ -286,10 +291,12 @@ public class CompleteWidgetActivity extends Activity {
                     double m = range * 0.00000898314041297d;
                     double geoObjLat  = droneLocationLat +  m;
                     double geoObjLng = droneLocationLng + m / Math.cos(droneLocationLat * (Math.PI / 180));
-                    String attitude = "pending";
-                    String geoObjName = "target";
-                    Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f",geoObjLat,geoObjLng));
-                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLat, geoObjLng, attitude, geoObjName, gimbalYawRelativeToAircraftHeading);
+
+                    //public static LatLng moveLatLng(LatLng latLng, double range, double bearing) {
+                    LatLng geoObjLatLng = moveLatLng(new LatLng(droneLocationLat,droneLocationLng), range, droneHeading);
+
+                    Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f",geoObjLatLng.latitude,geoObjLatLng.longitude));
+                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng.latitude, geoObjLatLng.longitude, "pending", "target", gimbalYawRelativeToAircraftHeading);
                 }
                 return false;
             }
@@ -342,13 +349,19 @@ public class CompleteWidgetActivity extends Activity {
                                 // the range to the target
                                 // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
                                 float range;
-                                if (droneLocationAlt < 1)
-                                    range = 1.5f / (float) tan(gimbalPitch);
+                                if (droneLocationAlt == 0)
+                                    range = 0.001f / (float) tan(gimbalPitch);
                                 else
                                     range = droneLocationAlt / (float) tan(gimbalPitch);
 
                                 if (Float.isInfinite(range) || Float.isNaN(range))
-                                    range = 2f;
+                                    range = 0.001f;
+
+                                range = Math.abs(range);
+
+                                Log.i(TAG, String.format("SPI Range: %f",range));
+
+                                LatLng spiLatLng = moveLatLng(new LatLng(droneLocationLat, droneLocationLng), range, droneHeading);
 
                                 // ref: https://stackoverflow.com/questions/7477003/calculating-new-longitude-latitude-from-old-n-meters
                                 // earth diameter 6378.137
@@ -357,7 +370,8 @@ public class CompleteWidgetActivity extends Activity {
                                 float m = range * 0.00000898314041297f;
                                 float spi_latitude = (float) droneLocationLat + m;
                                 float spi_longitude = (float) droneLocationLng + m / (float) Math.cos(droneLocationLat * (Math.PI / 180));
-                                new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spi_latitude, spi_longitude, "PlaceHolderName");
+
+                                new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spiLatLng.latitude, spiLatLng.longitude, "PlaceHolderName");
                             }
                         } else {
                             Toast.makeText(getApplicationContext(), "ERROR: GPS not valid", Toast.LENGTH_SHORT).show();
@@ -457,6 +471,38 @@ public class CompleteWidgetActivity extends Activity {
     }
 
     /**
+     * move latlng point by rang and bearing
+     *
+     * @param latLng  point
+     * @param range   range in meters
+     * @param bearing bearing in degrees
+     * @return new LatLng
+     */
+    public static LatLng moveLatLng(LatLng latLng, double range, double bearing) {
+        double EarthRadius = 6378137.0;
+        double DegreesToRadians = Math.PI / 180.0;
+        double RadiansToDegrees = 180.0 / Math.PI;
+
+        final double latA = latLng.latitude * DegreesToRadians;
+        final double lonA = latLng.longitude * DegreesToRadians;
+        final double angularDistance = range / EarthRadius;
+        //if (bearing < 0) bearing = 360d - bearing;
+        final double trueCourse = bearing * DegreesToRadians;
+
+        final double lat = Math.asin(
+                Math.sin(latA) * Math.cos(angularDistance) +
+                        Math.cos(latA) * Math.sin(angularDistance) * Math.cos(trueCourse));
+
+        final double dlon = Math.atan2(
+                Math.sin(trueCourse) * Math.sin(angularDistance) * Math.cos(latA),
+                Math.cos(angularDistance) - Math.sin(latA) * Math.sin(lat));
+
+        final double lon = ((lonA + dlon + Math.PI) % (Math.PI * 2)) - Math.PI;
+
+        return new LatLng(lat * RadiansToDegrees, lon * RadiansToDegrees);
+    }
+
+    /**
      * Calculate distance between two points in latitude and longitude taking
      * into account height difference. If you are not interested in height
      * difference pass 0.0. Uses Haversine method as its base.
@@ -500,8 +546,8 @@ public class CompleteWidgetActivity extends Activity {
                 public void onUpdate(@NonNull @NotNull GimbalState gimbalCurrentState) {
                     Attitude attitude = gimbalCurrentState.getAttitudeInDegrees();
                     gimbalPitch = attitude.getPitch();
-                    gimbalRoll = attitude.getRoll();
-                    gimbalYaw = attitude.getYaw();
+                    gimbalRoll  = attitude.getRoll();
+                    gimbalYaw   = attitude.getYaw();
                     gimbalYawRelativeToAircraftHeading = gimbalCurrentState.getYawRelativeToAircraftHeading();
                 }
             });

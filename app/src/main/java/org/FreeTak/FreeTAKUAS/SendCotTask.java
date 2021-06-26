@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.amap.api.maps.model.LatLng;
 import com.google.gson.annotations.JsonAdapter;
 
 import org.json.JSONException;
@@ -67,14 +68,24 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 jsonObject.put("FieldOfView", camera_fov);
                 jsonObject.put("VideoURLUID", parent.RTMP_URL);
 
-                // the range to the target
-                // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
-                if (altitude < 1) altitude = 1.5f;
-                float range = altitude / (float) tan(gimbalPitch);
-                if (Float.isInfinite(range) || Float.isNaN(range))
-                    range = 2f;
-
                 if (parent.getDroneSPI() == null) {
+                    // the range to the target
+                    // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
+                    float range;
+                    if (altitude == 0)
+                        range = 0.001f / (float) tan(gimbalPitch);
+                    else
+                        range = altitude / (float) tan(gimbalPitch);
+
+                    if (Float.isInfinite(range) || Float.isNaN(range))
+                        range = 0.001f;
+
+                    range = Math.abs(range);
+
+                    Log.i(TAG, String.format("postDrone Range: %f", range));
+
+                    LatLng spiLatLng = parent.moveLatLng(new LatLng(latitude,longitude), range, heading);
+
                     // ref: https://stackoverflow.com/questions/7477003/calculating-new-longitude-latitude-from-old-n-meters
                     // earth diameter 6378.137
                     // pi 3.141597
@@ -84,8 +95,8 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                     float spi_longitude = (float) longitude + m / (float) Math.cos(latitude * (Math.PI / 180));
 
                     jsonObject.put("Range", String.valueOf(range));
-                    jsonObject.put("SPILongitude", spi_latitude);
-                    jsonObject.put("SPILatitude", spi_longitude);
+                    jsonObject.put("SPILongitude", spiLatLng.longitude);
+                    jsonObject.put("SPILatitude", spiLatLng.latitude);
                     jsonObject.put("SPIName", String.format("%s_SPI", drone_name));
                 }
                 url = new URL("http://" + FTSaddr + "/Sensor/postDrone");
@@ -97,8 +108,8 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                     jsonObject.put("uid", parent.getDroneGUID());
                 }
             } else if (CotType.equalsIgnoreCase("SPI")) {
-                float spi_latitude  = (float) data[3];
-                float spi_longitude = (float) data[4];
+                double spi_latitude  = (double) data[3];
+                double spi_longitude = (double) data[4];
                 String name          = (String) data[5];
 
                 jsonObject.put("uid", parent.getDroneSPI());
@@ -119,8 +130,9 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 jsonObject.put("longitude", longitude);
                 jsonObject.put("latitude", latitude);
                 jsonObject.put("attitude", attitude);
-                jsonObject.put("how", "nonCoT");
                 jsonObject.put("name", name);
+                jsonObject.put("how", "nonCoT");
+                jsonObject.put("geoObject", "Ground");
                 jsonObject.put("Bearing", gimbalYawRelativeToAircraftHeading);
                 jsonObject.put("timeout",6000);
 
@@ -137,6 +149,8 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
 
                 url = new URL("http://" + FTSaddr + "/ManageVideoStream/postVideoStream");
             }
+
+            Log.i(TAG, String.format("Sending COT: %s", jsonObject.toString()));
 
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setDoInput(true);
