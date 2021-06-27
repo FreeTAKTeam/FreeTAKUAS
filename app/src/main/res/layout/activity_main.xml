@@ -17,7 +17,7 @@
             android:layout_column="0"
             android:layout_margin="10dp"
             android:padding="14dp"
-            android:text="UAS [DISABLED]"
+            android:text="@string/uas_button_disabled"
             android:textColor="@color/background_blue"
             android:textSize="14sp" />
         <Button
@@ -146,7 +146,7 @@
         android:padding="2dp"
         android:gravity="center"
         android:textColor="@color/white"
-        android:textSize="14sp"
+        android:textSize="13sp"
         tools:text="@string/app_version" />
     </TableRow>
 

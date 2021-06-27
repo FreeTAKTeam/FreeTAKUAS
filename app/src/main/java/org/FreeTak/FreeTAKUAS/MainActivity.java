@@ -166,7 +166,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         setContentView(R.layout.activity_main);
         isAppStarted = true;
         findViewById(R.id.complete_ui_widgets).setOnClickListener(this);
-        ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [NOT READY]");
+        ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_disabled);
         findViewById(R.id.bt_customized_ui_widgets).setOnClickListener(this);
         findViewById(R.id.bt_map_widget).setOnClickListener(this);
         TextView versionText = (TextView) findViewById(R.id.app_version);
@@ -481,11 +481,11 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
 
     private boolean enable_controller_button() {
         if (ready == 0x1f) {
-            ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [READY]");
+            ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_enabled);
             findViewById(R.id.complete_ui_widgets).setEnabled(true);
             return true;
         }
-        ((Button) findViewById(R.id.complete_ui_widgets)).setText("UAS [NOT READY]");
+        ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_disabled);
         return false;
     }
 

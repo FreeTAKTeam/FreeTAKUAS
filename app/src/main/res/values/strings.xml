@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">FreeTAK UAS</string>
     <string name="app_version">FreeTAK UAS version 0.5</string>
+    <string name="uas_button_disabled">UAS [NOT READY]</string>
+    <string name="uas_button_enabled">UAS [READY]</string>
     <string name="select_all">Select All</string>
     <string name="select_none">Select None</string>
     <string name="search">Search</string>
