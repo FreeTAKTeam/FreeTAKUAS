@@ -81,22 +81,13 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                         range = 0.001f;
 
                     range = Math.abs(range);
-
                     Log.i(TAG, String.format("postDrone Range: %f", range));
 
                     LatLng spiLatLng = parent.moveLatLng(new LatLng(latitude,longitude), range, heading);
 
-                    // ref: https://stackoverflow.com/questions/7477003/calculating-new-longitude-latitude-from-old-n-meters
-                    // earth diameter 6378.137
-                    // pi 3.141597
-                    // (1 / (((2 * 3.141597) / 360) * 6378.137)) / 1000 = 1 meter in degree
-                    float m = range * 0.00000898314041297f;
-                    float spi_latitude = (float) latitude + m;
-                    float spi_longitude = (float) longitude + m / (float) Math.cos(latitude * (Math.PI / 180));
-
                     jsonObject.put("Range", String.valueOf(range));
-                    jsonObject.put("SPILongitude", spiLatLng.longitude);
                     jsonObject.put("SPILatitude", spiLatLng.latitude);
+                    jsonObject.put("SPILongitude", spiLatLng.longitude);
                     jsonObject.put("SPIName", String.format("%s_SPI", drone_name));
                 }
                 url = new URL("http://" + FTSaddr + "/Sensor/postDrone");

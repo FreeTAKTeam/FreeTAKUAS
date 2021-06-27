@@ -10,10 +10,12 @@ import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -30,6 +32,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.amap.api.maps.model.LatLng;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
@@ -48,6 +51,8 @@ import dji.sdk.sdkmanager.DJISDKInitEvent;
 import dji.sdk.sdkmanager.DJISDKManager;
 import dji.sdk.useraccount.UserAccountManager;
 
+import static java.lang.Math.tan;
+
 /** Main activity that displays three choices to user */
 public class MainActivity extends Activity implements View.OnClickListener, PopupMenu.OnMenuItemClickListener {
     private static final String TAG = "MainActivity";
@@ -57,10 +62,12 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final String LAST_USED_RTMP_IP = "rtmp_ip";
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static boolean isAppStarted = false;
-    private int ready = 0;
+    public int ready = 0;
+
+    private final Handler button_handler = new Handler();
+    private Runnable button_runnable;
 
     private DJISDKManager.SDKManagerCallback registrationCallback = new DJISDKManager.SDKManagerCallback() {
-
 
         @Override
         public void onRegister(DJIError error) {
@@ -68,7 +75,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             if (error == DJISDKError.REGISTRATION_SUCCESS) {
                 //loginAccount();
                 DJISDKManager.getInstance().startConnectionToProduct();
-                Toast.makeText(getApplicationContext(), "SDK registration succeeded!", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "SDK registration succeeded!", Toast.LENGTH_SHORT).show();
             } else {
 
                 Toast.makeText(getApplicationContext(),
@@ -88,7 +95,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         public void onProductConnect(BaseProduct product) {
             Toast.makeText(getApplicationContext(),
                            "UAS and Controller connected!",
-                           Toast.LENGTH_LONG).show();
+                           Toast.LENGTH_SHORT).show();
             ready = ready | 16;
         }
         
@@ -172,15 +179,15 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         TextView versionText = (TextView) findViewById(R.id.app_version);
         versionText.setText(R.string.app_version);
         FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
-        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP,"204.48.30.216:19023"));
+        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, "204.48.30.216:19023"));
         FtsIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_SEARCH
-                    || actionId == EditorInfo.IME_ACTION_DONE
-                    || event != null
-                    && event.getAction() == KeyEvent.ACTION_DOWN
-                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                        || actionId == EditorInfo.IME_ACTION_DONE
+                        || event != null
+                        && event.getAction() == KeyEvent.ACTION_DOWN
+                        && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
                     if (event != null && event.isShiftPressed()) {
                         return false;
                     } else {
@@ -213,7 +220,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         FtsApiEditText = (EditText) findViewById(R.id.edittext_fts_apikey);
-        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API,"OrionLab11"));
+        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, "OrionLab11"));
         FtsApiEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -254,7 +261,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         RtmpIpEditText = (EditText) findViewById(R.id.edittext_rtmp_ip);
-        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP,"64.227.70.49:1935"));
+        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, "64.227.70.49:1935"));
         RtmpIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -295,7 +302,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         DroneNameEditText = (EditText) findViewById(R.id.edittext_drone_name);
-        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME,"djcombo"));
+        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, "djcombo"));
         DroneNameEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -340,10 +347,16 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         handleFtsApiKeyTextChange();
         handleRtmpIpTextChange();
         handleDroneNameTextChange();
+
+        button_handler.postDelayed(button_runnable = () -> {
+            button_handler.postDelayed(button_runnable, 500);
+            enable_controller_button();
+        }, 500);
     }
 
     @Override
     protected void onDestroy() {
+        button_handler.removeCallbacks(button_runnable);
         DJISDKManager.getInstance().destroy();
         ready = 0;
         isAppStarted = false;
@@ -480,11 +493,15 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     }
 
     private boolean enable_controller_button() {
+        Log.i(TAG, String.format("Ready? %d",ready));
         if (ready == 0x1f) {
+            Log.i(TAG, "YES READY");
             ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_enabled);
             findViewById(R.id.complete_ui_widgets).setEnabled(true);
+            button_handler.removeCallbacks(button_runnable);
             return true;
         }
+        Log.i(TAG, "NOT READY");
         ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_disabled);
         return false;
     }

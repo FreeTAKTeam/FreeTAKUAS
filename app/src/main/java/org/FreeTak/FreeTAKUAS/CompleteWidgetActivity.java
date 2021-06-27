@@ -90,8 +90,8 @@ public class CompleteWidgetActivity extends Activity {
     private final Handler sensor_handler = new Handler();
     private final Handler stream_handler = new Handler();
     private Runnable sensor_runnable, stream_runnable;
-    // every 1 second try to send a sensor cotee
-    int sensor_delay = 1000;
+    // every half second try to send a sensor cotee
+    int sensor_delay = 500;
     // every 3 seconds try to send a stream cot, stop when we send one successfully
     int stream_delay = 3000;
 
@@ -282,19 +282,9 @@ public class CompleteWidgetActivity extends Activity {
                         range = 0.001f;
 
                     range = Math.abs(range);
-
                     Log.i(TAG, String.format("GeoObject Range: %f", range));
 
-                    // earth diameter 6378.137
-                    // pi 3.141597
-                    // (1 / (((2 * 3.141597) / 360) * 6378.137)) / 1000 = 1 meter in degree
-                    double m = range * 0.00000898314041297d;
-                    double geoObjLat  = droneLocationLat +  m;
-                    double geoObjLng = droneLocationLng + m / Math.cos(droneLocationLat * (Math.PI / 180));
-
-                    //public static LatLng moveLatLng(LatLng latLng, double range, double bearing) {
                     LatLng geoObjLatLng = moveLatLng(new LatLng(droneLocationLat,droneLocationLng), range, droneHeading);
-
                     Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f",geoObjLatLng.latitude,geoObjLatLng.longitude));
                     new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng.latitude, geoObjLatLng.longitude, "pending", "target", gimbalYawRelativeToAircraftHeading);
                 }
@@ -336,97 +326,83 @@ public class CompleteWidgetActivity extends Activity {
                 String camera_fov = droneFoVs.get(DJISDKManager.getInstance().getProduct().getModel().toString()).toString();
 
                 // send sensor CoTs while this activity is open and the drone has real gps data
-                sensor_handler.postDelayed(sensor_runnable = new Runnable() {
-                    public void run() {
-                        sensor_handler.postDelayed(sensor_runnable, sensor_delay);
-                        if (checkGpsCoordinates(droneLocationLat, droneLocationLng)) {
-                            Log.i(TAG, String.format("Updating drone position: alt %f long %f lat %f distance %f heading %f", droneLocationAlt, droneLocationLng, droneLocationLat, droneDistance, droneHeading));
-                            Log.i(TAG, String.format("gimbal stats: pitch: %f roll %f yaw %f", gimbalPitch, gimbalRoll, gimbalYaw));
-                            //Toast.makeText(getApplicationContext(), "Sending UAS Location CoT", Toast.LENGTH_SHORT).show();
-                            new SendCotTask(CompleteWidgetActivity.this).execute("sensor", FTS_IP, FTS_APIKEY, drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, camera_fov, gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading);
-                            if (getDroneSPI() != null) {
-                                Log.i(TAG, "Sending postSPI");
-                                // the range to the target
-                                // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
-                                float range;
-                                if (droneLocationAlt == 0)
-                                    range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
-                                else
-                                    range = droneLocationAlt / (float) tan(Math.toRadians(gimbalPitch));
+                sensor_handler.postDelayed(sensor_runnable = () -> {
+                    sensor_handler.postDelayed(sensor_runnable, sensor_delay);
+                    if (checkGpsCoordinates(droneLocationLat, droneLocationLng)) {
+                        Log.i(TAG, String.format("Updating drone position: alt %f long %f lat %f distance %f heading %f", droneLocationAlt, droneLocationLng, droneLocationLat, droneDistance, droneHeading));
+                        Log.i(TAG, String.format("gimbal stats: pitch: %f roll %f yaw %f", gimbalPitch, gimbalRoll, gimbalYaw));
+                        //Toast.makeText(getApplicationContext(), "Sending UAS Location CoT", Toast.LENGTH_SHORT).show();
+                        new SendCotTask(CompleteWidgetActivity.this).execute("sensor", FTS_IP, FTS_APIKEY, drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, camera_fov, gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading);
+                        if (getDroneSPI() != null) {
+                            // the range to the target
+                            // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
+                            float range;
+                            if (droneLocationAlt == 0)
+                                range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
+                            else
+                                range = droneLocationAlt / (float) tan(Math.toRadians(gimbalPitch));
 
-                                if (Float.isInfinite(range) || Float.isNaN(range))
-                                    range = 0.001f;
+                            if (Float.isInfinite(range) || Float.isNaN(range))
+                                range = 0.001f;
 
-                                range = Math.abs(range);
+                            range = Math.abs(range);
+                            Log.i(TAG, String.format("SPI Range: %f",range));
 
-                                Log.i(TAG, String.format("SPI Range: %f",range));
-
-                                LatLng spiLatLng = moveLatLng(new LatLng(droneLocationLat, droneLocationLng), range, droneHeading);
-
-                                // ref: https://stackoverflow.com/questions/7477003/calculating-new-longitude-latitude-from-old-n-meters
-                                // earth diameter 6378.137
-                                // pi 3.141597
-                                // (1 / (((2 * 3.141597) / 360) * 6378.137)) / 1000 = 1 meter in degree
-                                float m = range * 0.00000898314041297f;
-                                float spi_latitude = (float) droneLocationLat + m;
-                                float spi_longitude = (float) droneLocationLng + m / (float) Math.cos(droneLocationLat * (Math.PI / 180));
-
-                                new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spiLatLng.latitude, spiLatLng.longitude, "PlaceHolderName");
-                            }
-                        } else {
-                            Toast.makeText(getApplicationContext(), "ERROR: GPS not valid", Toast.LENGTH_SHORT).show();
-                            // stop the thread
-                            //sensor_handler.removeCallbacks(sensor_runnable);
+                            LatLng spiLatLng = moveLatLng(new LatLng(droneLocationLat, droneLocationLng), range, droneHeading);
+                            Log.i(TAG, String.format("Sending SPI lat: %f lng: %f",spiLatLng.latitude, spiLatLng.longitude));
+                            new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spiLatLng.latitude, spiLatLng.longitude, String.format("%s SPI",drone_name));
                         }
+                    } else {
+                        Toast.makeText(getApplicationContext(), "No GPS, retrying...", Toast.LENGTH_SHORT).show();
+                        // stop the thread
+                        //sensor_handler.removeCallbacks(sensor_runnable);
                     }
                 }, sensor_delay);
 
                 // send stream 1 stream CoT
-                stream_handler.postDelayed(stream_runnable = new Runnable() {
-                    public void run() {
-                        stream_handler.postDelayed(stream_runnable, stream_delay);
-                        Log.i(TAG,String.format("RTMP URL: %s", RTMP_URL));
-                        l = DJISDKManager.getInstance().getLiveStreamManager();
-                        if (!l.isStreaming()) {
-                            l.registerListener((x) -> {
+                stream_handler.postDelayed(stream_runnable = () -> {
+                    stream_handler.postDelayed(stream_runnable, stream_delay);
+                    Log.i(TAG,String.format("RTMP URL: %s", RTMP_URL));
+                    l = DJISDKManager.getInstance().getLiveStreamManager();
+                    if (!l.isStreaming()) {
+                        l.registerListener((x) -> {
+                            Log.d(TAG, "LiveStream callback:" + x);
+                        });
+                        l.setAudioMuted(true);
+                        l.setVideoSource(LiveStreamManager.LiveStreamVideoSource.Primary);
+                        l.setVideoEncodingEnabled(true);
+                        l.setLiveUrl(RTMP_URL);
+
+                        int rc = 0;
+                        rc = l.startStream();
+                        if (rc != 0) {
+                            l.stopStream();
+                            l.unregisterListener((x) -> {
                                 Log.d(TAG, "LiveStream callback:" + x);
                             });
-                            l.setAudioMuted(true);
-                            l.setVideoSource(LiveStreamManager.LiveStreamVideoSource.Primary);
-                            l.setVideoEncodingEnabled(true);
-                            l.setLiveUrl(RTMP_URL);
-
-                            int rc = 0;
-                            rc = l.startStream();
-                            if (rc != 0) {
-                                l.stopStream();
-                                l.unregisterListener((x) -> {
-                                    Log.d(TAG, "LiveStream callback:" + x);
-                                });
-                                // 254 probably means the user put the wrong IP:Port in
-                                if (rc == 254) {
-                                    Toast.makeText(getApplicationContext(), "ERROR: Check your RTMP configuration\nStopping stream attempts", Toast.LENGTH_LONG).show();
-                                    // kill this thread, the IP:Port are bad
-                                    stream_handler.removeCallbacks(stream_runnable);
-                                }
-                            } else {
-                                Toast.makeText(getApplicationContext(), "RTMP Stream Established Successfully", Toast.LENGTH_SHORT).show();
+                            // 254 probably means the user put the wrong IP:Port in
+                            if (rc == 254) {
+                                Toast.makeText(getApplicationContext(), "ERROR: Check your RTMP configuration\nStopping stream attempts", Toast.LENGTH_LONG).show();
+                                // kill this thread, the IP:Port are bad
+                                stream_handler.removeCallbacks(stream_runnable);
                             }
                         } else {
-                            Toast.makeText(getApplicationContext(), "UAS streaming is active\nSending 1 Stream CoT", Toast.LENGTH_LONG).show();
-                            new SendCotTask(CompleteWidgetActivity.this).execute("stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
-                            // once the stream is up, stop sending the stream CoT
-                            stream_handler.removeCallbacks(stream_runnable);
+                            Toast.makeText(getApplicationContext(), "RTMP Stream Established Successfully", Toast.LENGTH_SHORT).show();
                         }
+                    } else {
+                        Toast.makeText(getApplicationContext(), "UAS streaming is active\nSending 1 Stream CoT", Toast.LENGTH_LONG).show();
+                        new SendCotTask(CompleteWidgetActivity.this).execute("stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
+                        // once the stream is up, stop sending the stream CoT
+                        stream_handler.removeCallbacks(stream_runnable);
                     }
                 }, stream_delay);
             }
             else {
-                //Toast.makeText(getApplicationContext(), "ERROR: Gimbal did not init correctly\nCheck UAS is powered on", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "ERROR: Gimbal did not init correctly\nCheck UAS is powered on", Toast.LENGTH_LONG).show();
             }
         }
         else {
-            //Toast.makeText(getApplicationContext(), "ERROR: Flight Controller did not init\nCheck USB connection to controller", Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "ERROR: Flight Controller did not init\nCheck USB connection to controller", Toast.LENGTH_LONG).show();
         }
 
         mapWidget.onResume();
@@ -486,7 +462,6 @@ public class CompleteWidgetActivity extends Activity {
         final double latA = latLng.latitude * DegreesToRadians;
         final double lonA = latLng.longitude * DegreesToRadians;
         final double angularDistance = range / EarthRadius;
-        //if (bearing < 0) bearing = 360d - bearing;
         final double trueCourse = bearing * DegreesToRadians;
 
         final double lat = Math.asin(
