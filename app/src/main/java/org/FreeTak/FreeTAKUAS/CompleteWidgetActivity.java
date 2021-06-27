@@ -90,8 +90,8 @@ public class CompleteWidgetActivity extends Activity {
     private final Handler sensor_handler = new Handler();
     private final Handler stream_handler = new Handler();
     private Runnable sensor_runnable, stream_runnable;
-    // every half second try to send a sensor cotee
-    int sensor_delay = 500;
+    // send 4 sensor updates a second
+    int sensor_delay = 250;
     // every 3 seconds try to send a stream cot, stop when we send one successfully
     int stream_delay = 3000;
 
@@ -278,8 +278,11 @@ public class CompleteWidgetActivity extends Activity {
                     else
                         range = droneLocationAlt / (float) tan(Math.toRadians(gimbalPitch));
 
-                    if (Float.isInfinite(range) || Float.isNaN(range))
-                        range = 0.001f;
+                    if (gimbalPitch == 0)
+                        range = 1.169f * (float) Math.sqrt(droneLocationAlt*3.28084) * 1852.001f;
+
+                    //if (Float.isInfinite(range) || Float.isNaN(range))
+                    //    range = 0.001f;
 
                     range = Math.abs(range);
                     Log.i(TAG, String.format("GeoObject Range: %f", range));
@@ -342,8 +345,11 @@ public class CompleteWidgetActivity extends Activity {
                             else
                                 range = droneLocationAlt / (float) tan(Math.toRadians(gimbalPitch));
 
-                            if (Float.isInfinite(range) || Float.isNaN(range))
-                                range = 0.001f;
+                            if (gimbalPitch == 0)
+                                range = 1.169f * (float) Math.sqrt(droneLocationAlt*3.28084) * 1852.001f;
+
+                            //if (Float.isInfinite(range) || Float.isNaN(range))
+                            //    range = 0.001f;
 
                             range = Math.abs(range);
                             Log.i(TAG, String.format("SPI Range: %f",range));

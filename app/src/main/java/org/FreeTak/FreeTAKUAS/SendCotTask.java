@@ -77,8 +77,11 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                     else
                         range = altitude / (float) tan(Math.toRadians(gimbalPitch));
 
-                    if (Float.isInfinite(range) || Float.isNaN(range))
-                        range = 0.001f;
+                    if (gimbalPitch == 0)
+                        range = 1.169f * (float) Math.sqrt(altitude*3.28084) * 1852.001f;
+
+                    //if (Float.isInfinite(range) || Float.isNaN(range))
+                    //    range = 0.001f;
 
                     range = Math.abs(range);
                     Log.i(TAG, String.format("postDrone Range: %f", range));
