@@ -274,9 +274,9 @@ public class CompleteWidgetActivity extends Activity {
                     // the range to the target
                     float range;
                     if (droneLocationAlt < 1)
-                        range = 0.001f / (float) tan(gimbalPitch);
+                        range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
                     else
-                        range = droneLocationAlt / (float) tan(gimbalPitch);
+                        range = droneLocationAlt / (float) tan(Math.toRadians(gimbalPitch));
 
                     if (Float.isInfinite(range) || Float.isNaN(range))
                         range = 0.001f;
@@ -350,9 +350,9 @@ public class CompleteWidgetActivity extends Activity {
                                 // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
                                 float range;
                                 if (droneLocationAlt == 0)
-                                    range = 0.001f / (float) tan(gimbalPitch);
+                                    range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
                                 else
-                                    range = droneLocationAlt / (float) tan(gimbalPitch);
+                                    range = droneLocationAlt / (float) tan(Math.toRadians(gimbalPitch));
 
                                 if (Float.isInfinite(range) || Float.isNaN(range))
                                     range = 0.001f;

@@ -73,9 +73,9 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                     // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
                     float range;
                     if (altitude == 0)
-                        range = 0.001f / (float) tan(gimbalPitch);
+                        range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
                     else
-                        range = altitude / (float) tan(gimbalPitch);
+                        range = altitude / (float) tan(Math.toRadians(gimbalPitch));
 
                     if (Float.isInfinite(range) || Float.isNaN(range))
                         range = 0.001f;
