@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_centerInParent="true"
-            custom:sourceCameraNameVisibility="true" />
+            custom:sourceCameraNameVisibility="false" />
 
     </RelativeLayout>
 
@@ -70,7 +70,7 @@
             android:id="@+id/secondary_fpv_widget"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            custom:sourceCameraNameVisibility="true"
+            custom:sourceCameraNameVisibility="false"
             custom:videoSource="secondary"/>
     </FrameLayout>
 
@@ -89,7 +89,7 @@
         android:id="@+id/remaining_flight_time"
         android:background="@color/transparent"
         android:layout_height="20dp"/>
-
+    <!--
     <LinearLayout
         android:id="@+id/camera"
         android:layout_alignParentRight="true"
@@ -127,6 +127,7 @@
             android:layout_width="125dp"
             android:layout_height="25dp"/>
     </LinearLayout>
+    -->
     <LinearLayout
         android:id="@+id/camera2"
         android:layout_width="wrap_content"

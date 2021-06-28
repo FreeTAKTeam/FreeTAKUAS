@@ -65,26 +65,25 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 jsonObject.put("Bearing", String.valueOf(heading));
                 jsonObject.put("longitude", longitude);
                 jsonObject.put("latitude", latitude);
-                jsonObject.put("FieldOfView", camera_fov);
                 jsonObject.put("VideoURLUID", parent.RTMP_URL);
 
+                // the range to the target
+                // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
+                float range;
+                if (altitude == 0)
+                    range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
+                else
+                    range = altitude / (float) tan(Math.toRadians(gimbalPitch));
+
+                if (gimbalPitch == 0)
+                    range = 1.169f * (float) Math.sqrt(altitude*3.28084) * 1852.001f;
+
+                range = Math.abs(range);
+                jsonObject.put("FieldOfView", String.valueOf(range));
+                //jsonObject.put("FieldOfView", Float.parseFloat(camera_fov)/gimbalPitch);
+                Log.i(TAG, String.format("postDrone Range: %f", range));
+
                 if (parent.getDroneSPI() == null) {
-                    // the range to the target
-                    // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
-                    float range;
-                    if (altitude == 0)
-                        range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
-                    else
-                        range = altitude / (float) tan(Math.toRadians(gimbalPitch));
-
-                    if (gimbalPitch == 0)
-                        range = 1.169f * (float) Math.sqrt(altitude*3.28084) * 1852.001f;
-
-                    //if (Float.isInfinite(range) || Float.isNaN(range))
-                    //    range = 0.001f;
-
-                    range = Math.abs(range);
-                    Log.i(TAG, String.format("postDrone Range: %f", range));
 
                     LatLng spiLatLng = parent.moveLatLng(new LatLng(latitude,longitude), range, heading);
 
