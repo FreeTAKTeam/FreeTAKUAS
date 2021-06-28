@@ -20,6 +20,7 @@
             android:text="@string/uas_button_disabled"
             android:textColor="@color/background_blue"
             android:textSize="14sp" />
+
         <Button
             android:id="@+id/bt_customized_ui_widgets"
             android:layout_width="match_parent"
@@ -41,6 +42,7 @@
             android:textColor="@color/background_blue"
             android:textSize="14sp"
             android:visibility="invisible" />
+
     </TableRow>
 
     <TableRow
@@ -66,42 +68,54 @@
             android:textSize="15sp" />
 
         <EditText
-            android:id="@+id/edittext_fts_apikey"
+            android:id="@+id/edittext_rtmp_ip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_column="0"
             android:layout_margin="10dp"
             android:background="@color/gray"
+            android:digits="0123456789.:\n"
             android:gravity="center"
-            android:hint="@string/fts_apikey"
+            android:hint="@string/rtmp_ip"
             android:imeOptions="actionDone"
-            android:maxLength="32"
+            android:maxLength="20"
             android:maxLines="1"
             android:padding="2dp"
             android:textColor="@color/white"
             android:textColorHint="@android:color/white"
             android:textSize="15sp" />
+        <!--
+        <CheckBox
+            android:id="@+id/enable_stream"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:padding="14dp"
+            android:text="RTMP Stream Enabled"
+            android:textColor="@color/white"
+            android:textSize="15sp" />
+        -->
     </TableRow>
     <TableRow
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
     <EditText
-        android:id="@+id/edittext_rtmp_ip"
+        android:id="@+id/edittext_fts_apikey"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_column="0"
         android:layout_margin="10dp"
         android:background="@color/gray"
-        android:digits="0123456789.:\n"
         android:gravity="center"
-        android:hint="@string/rtmp_ip"
+        android:hint="@string/fts_apikey"
         android:imeOptions="actionDone"
-        android:maxLength="20"
+        android:maxLength="32"
         android:maxLines="1"
         android:padding="2dp"
         android:textColor="@color/white"
         android:textColorHint="@android:color/white"
         android:textSize="15sp" />
+
 
     <!--
     <EditText

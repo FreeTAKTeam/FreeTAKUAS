@@ -27,6 +27,7 @@ import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -166,6 +167,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final int REQUEST_PERMISSION_CODE = 12345;
     private List<String> missingPermission = new ArrayList<>();
     private EditText FtsIpEditText, FtsApiEditText, DroneNameEditText, RtmpIpEditText;
+    private ToggleButton streamtoggleButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -178,6 +180,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         findViewById(R.id.bt_map_widget).setOnClickListener(this);
         TextView versionText = (TextView) findViewById(R.id.app_version);
         versionText.setText(R.string.app_version);
+        //findViewById((R.id.enable_stream).setOnCheckedChangeListener(this));
         FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
         FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
         FtsIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {

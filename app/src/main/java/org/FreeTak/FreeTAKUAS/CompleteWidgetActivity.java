@@ -142,6 +142,9 @@ public class CompleteWidgetActivity extends Activity {
 
         parentView = (ViewGroup) findViewById(R.id.root_view);
 
+        fpvOverlayWidget = findViewById(R.id.fpv_overlay_widget);
+        fpvOverlayWidget.setSpotMeteringEnabled(false);
+
         fpvWidget = findViewById(R.id.fpv_widget);
         fpvWidget.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -272,14 +275,14 @@ public class CompleteWidgetActivity extends Activity {
                     Toast.makeText(getApplicationContext(), "Sending GeoObject CoT", Toast.LENGTH_SHORT).show();
                     // compute distance to center of fpv
                     // the range to the target
-                    float range;
+                    double range;
                     if (droneLocationAlt < 1)
-                        range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
+                        range = 0.001 / tan(Math.toRadians(gimbalPitch));
                     else
-                        range = droneLocationAlt / (float) tan(Math.toRadians(gimbalPitch));
+                        range = droneLocationAlt / tan(Math.toRadians(gimbalPitch));
 
                     if (gimbalPitch == 0)
-                        range = 1.169f * (float) Math.sqrt(droneLocationAlt*3.28084) * 1852.001f;
+                        range = 1.169 * Math.sqrt(droneLocationAlt*3.28084) * 1852.001;
 
                     //if (Float.isInfinite(range) || Float.isNaN(range))
                     //    range = 0.001f;
@@ -339,17 +342,14 @@ public class CompleteWidgetActivity extends Activity {
                         if (getDroneSPI() != null) {
                             // the range to the target
                             // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
-                            float range;
+                            double range;
                             if (droneLocationAlt == 0)
-                                range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
+                                range = 0.001 / tan(Math.toRadians(gimbalPitch));
                             else
-                                range = droneLocationAlt / (float) tan(Math.toRadians(gimbalPitch));
+                                range = droneLocationAlt / tan(Math.toRadians(gimbalPitch));
 
                             if (gimbalPitch == 0)
-                                range = 1.169f * (float) Math.sqrt(droneLocationAlt*3.28084) * 1852.001f;
-
-                            //if (Float.isInfinite(range) || Float.isNaN(range))
-                            //    range = 0.001f;
+                                range = 1.169 * Math.sqrt(droneLocationAlt*3.28084) * 1852.001;
 
                             range = Math.abs(range);
                             Log.i(TAG, String.format("SPI Range: %f",range));

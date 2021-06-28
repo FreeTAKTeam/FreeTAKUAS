@@ -69,25 +69,30 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
 
                 // the range to the target
                 // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
-                float range;
+                double range;
                 if (altitude == 0)
-                    range = 0.001f / (float) tan(Math.toRadians(gimbalPitch));
+                    range = 0.001 / tan(Math.toRadians(gimbalPitch));
                 else
-                    range = altitude / (float) tan(Math.toRadians(gimbalPitch));
+                    range = altitude / tan(Math.toRadians(gimbalPitch));
 
                 if (gimbalPitch == 0)
-                    range = 1.169f * (float) Math.sqrt(altitude*3.28084) * 1852.001f;
+                    range = 1.169 *  Math.sqrt(altitude*3.28084) * 1852.001;
 
                 range = Math.abs(range);
-                jsonObject.put("FieldOfView", String.valueOf(range));
+                jsonObject.put("Range", String.valueOf(range));
+
+                double fov = Math.abs(2 * (tan(Math.toRadians(gimbalPitch)/2) * range));
+                jsonObject.put("FieldOfView", String.valueOf(fov));
+
+                //jsonObject.put("FieldOfView", String.valueOf(range));
                 //jsonObject.put("FieldOfView", Float.parseFloat(camera_fov)/gimbalPitch);
                 Log.i(TAG, String.format("postDrone Range: %f", range));
+                Log.i(TAG, String.format("FOV: %f", fov));
 
                 if (parent.getDroneSPI() == null) {
 
                     LatLng spiLatLng = parent.moveLatLng(new LatLng(latitude,longitude), range, heading);
 
-                    jsonObject.put("Range", String.valueOf(range));
                     jsonObject.put("SPILatitude", spiLatLng.latitude);
                     jsonObject.put("SPILongitude", spiLatLng.longitude);
                     jsonObject.put("SPIName", String.format("%s_SPI", drone_name));
