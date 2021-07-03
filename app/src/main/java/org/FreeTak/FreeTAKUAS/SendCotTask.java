@@ -71,10 +71,11 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
                 double range;
                 if (altitude == 0)
-                    range = 0.001 / tan(Math.toRadians(gimbalPitch));
+                    range = 0.001 / Math.tan(Math.toRadians(gimbalPitch));
                 else
-                    range = altitude / tan(Math.toRadians(gimbalPitch));
+                    range = altitude / Math.tan(Math.toRadians(gimbalPitch));
 
+                // range to horizon, 3.28084ft per meter, 1.169 nautical mile, 1852.001 meters per nautical mile
                 if (gimbalPitch == 0)
                     range = 1.169 *  Math.sqrt(altitude*3.28084) * 1852.001;
 
@@ -84,19 +85,13 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 double fov = Math.abs(2 * (tan(Math.toRadians(gimbalPitch)/2) * range));
                 jsonObject.put("FieldOfView", String.valueOf(fov));
 
-                //jsonObject.put("FieldOfView", String.valueOf(range));
-                //jsonObject.put("FieldOfView", Float.parseFloat(camera_fov)/gimbalPitch);
-                Log.i(TAG, String.format("postDrone Range: %f", range));
-                Log.i(TAG, String.format("FOV: %f", fov));
-
                 if (parent.getDroneSPI() == null) {
-
                     LatLng spiLatLng = parent.moveLatLng(new LatLng(latitude,longitude), range, heading);
-
                     jsonObject.put("SPILatitude", spiLatLng.latitude);
                     jsonObject.put("SPILongitude", spiLatLng.longitude);
                     jsonObject.put("SPIName", String.format("%s_SPI", drone_name));
                 }
+
                 url = new URL("http://" + FTSaddr + "/Sensor/postDrone");
 
                 if (parent.getDroneGUID() != null) {
@@ -123,7 +118,7 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 double longitude = (double) data[4];
                 String attitude  = (String) data[5];
                 String name      = (String) data[6];
-                float gimbalYawRelativeToAircraftHeading = (float) data[7];
+                double droneHeading = (double) data[7];
 
                 jsonObject.put("longitude", longitude);
                 jsonObject.put("latitude", latitude);
@@ -131,18 +126,18 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 jsonObject.put("name", name);
                 jsonObject.put("how", "nonCoT");
                 jsonObject.put("geoObject", "Ground");
-                jsonObject.put("Bearing", gimbalYawRelativeToAircraftHeading);
+                jsonObject.put("Bearing", droneHeading);
                 jsonObject.put("timeout",6000);
 
                 url = new URL("http://" + FTSaddr + "/ManageGeoObject/postGeoObject");
-            } else if (CotType.equalsIgnoreCase("stream")) {
+            } else if (CotType.equalsIgnoreCase("start_stream")) {
                 String drone_name = (String) data[3];
                 String[] RTMPaddr = ((String) data[4]).split(":");
 
                 jsonObject.put("streamAddress",RTMPaddr[0]);
                 jsonObject.put("streamPort", RTMPaddr[1]);
                 jsonObject.put("streamPath",String.format("/live/UAS-%s", drone_name));
-                jsonObject.put("alias", String.format("Video stream from UAS-%s",drone_name));
+                jsonObject.put("alias", String.format("Video stream from %s",drone_name));
                 jsonObject.put("streamProtocol","rtmp");
 
                 url = new URL("http://" + FTSaddr + "/ManageVideoStream/postVideoStream");
@@ -202,14 +197,14 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 if (jsonObject.get("Message").toString().equalsIgnoreCase("OK")) {
                     try {
                         JSONObject GUID = new JSONObject(jsonObject.get("Content").toString());
-                        String drone_guid = GUID.get("DRONE_UID").toString();
-                        String spi_guid = GUID.get("SPI_UID").toString();
-                        Log.i(TAG, String.format("DRONE_UID from FTS: %s", drone_guid));
-                        Log.i(TAG, String.format("SPI_UID from FTS: %s", spi_guid));
+                        String drone_guid = GUID.get("uid").toString();
+                        String spi_guid = GUID.get("SPI_uid").toString();
+                        Log.i(TAG, String.format("uid from FTS: %s", drone_guid));
+                        Log.i(TAG, String.format("SPI_uid from FTS: %s", spi_guid));
                         parent.setDroneGUID(drone_guid);
                         parent.setDroneSPI(spi_guid);
-                        Log.i(TAG, String.format("Set DRONE_UID to %s", parent.getDroneGUID()));
-                        Log.i(TAG, String.format("Set SPI_UID to %s", parent.getDroneSPI()));
+                        Log.i(TAG, String.format("Set uid to %s", parent.getDroneGUID()));
+                        Log.i(TAG, String.format("Set SPI_uid to %s", parent.getDroneSPI()));
                     } catch (JSONException e) {
                         Log.i(TAG, String.format("GeoObject|VideoStream|SPI UID: %s", jsonObject.get("Content").toString()));
                     }

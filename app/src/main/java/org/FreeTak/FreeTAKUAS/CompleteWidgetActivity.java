@@ -55,6 +55,7 @@ import dji.ux.widget.MapWidget;
 import dji.ux.widget.controls.CameraControlsWidget;
 import dji.ux.widget.dashboard.CompassWidget;
 
+import static java.lang.Math.cosh;
 import static java.lang.Math.tan;
 
 /**
@@ -90,8 +91,8 @@ public class CompleteWidgetActivity extends Activity {
     private final Handler sensor_handler = new Handler();
     private final Handler stream_handler = new Handler();
     private Runnable sensor_runnable, stream_runnable;
-    // send 4 sensor updates a second
-    int sensor_delay = 250;
+    // send 3 sensor updates a second
+    int sensor_delay = 333;
     // every 3 seconds try to send a stream cot, stop when we send one successfully
     int stream_delay = 3000;
 
@@ -273,26 +274,23 @@ public class CompleteWidgetActivity extends Activity {
 
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     Toast.makeText(getApplicationContext(), "Sending GeoObject CoT", Toast.LENGTH_SHORT).show();
-                    // compute distance to center of fpv
                     // the range to the target
                     double range;
                     if (droneLocationAlt < 1)
-                        range = 0.001 / tan(Math.toRadians(gimbalPitch));
+                        range = 0.001 / Math.tan(Math.toRadians(gimbalPitch));
                     else
-                        range = droneLocationAlt / tan(Math.toRadians(gimbalPitch));
+                        range = droneLocationAlt / Math.tan(Math.toRadians(gimbalPitch));
 
+                    // range to horizon, 3.28084ft per meter, 1.169 nautical mile, 1852.001 meters per nautical mile
                     if (gimbalPitch == 0)
                         range = 1.169 * Math.sqrt(droneLocationAlt*3.28084) * 1852.001;
-
-                    //if (Float.isInfinite(range) || Float.isNaN(range))
-                    //    range = 0.001f;
 
                     range = Math.abs(range);
                     Log.i(TAG, String.format("GeoObject Range: %f", range));
 
                     LatLng geoObjLatLng = moveLatLng(new LatLng(droneLocationLat,droneLocationLng), range, droneHeading);
                     Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f",geoObjLatLng.latitude,geoObjLatLng.longitude));
-                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng.latitude, geoObjLatLng.longitude, "pending", "target", gimbalYawRelativeToAircraftHeading);
+                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng.latitude, geoObjLatLng.longitude, "pending", "target", droneHeading);
                 }
                 return false;
             }
@@ -337,17 +335,17 @@ public class CompleteWidgetActivity extends Activity {
                     if (checkGpsCoordinates(droneLocationLat, droneLocationLng)) {
                         Log.i(TAG, String.format("Updating drone position: alt %f long %f lat %f distance %f heading %f", droneLocationAlt, droneLocationLng, droneLocationLat, droneDistance, droneHeading));
                         Log.i(TAG, String.format("gimbal stats: pitch: %f roll %f yaw %f", gimbalPitch, gimbalRoll, gimbalYaw));
-                        //Toast.makeText(getApplicationContext(), "Sending UAS Location CoT", Toast.LENGTH_SHORT).show();
+                        Log.i(TAG, "Sending UAS Location CoT");
                         new SendCotTask(CompleteWidgetActivity.this).execute("sensor", FTS_IP, FTS_APIKEY, drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, camera_fov, gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading);
                         if (getDroneSPI() != null) {
-                            // the range to the target
-                            // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
+                            // the range to the target, using angle of depression
                             double range;
                             if (droneLocationAlt == 0)
-                                range = 0.001 / tan(Math.toRadians(gimbalPitch));
+                                range = 0.001 / Math.tan(Math.toRadians(gimbalPitch));
                             else
-                                range = droneLocationAlt / tan(Math.toRadians(gimbalPitch));
+                                range = droneLocationAlt / Math.tan(Math.toRadians(gimbalPitch));
 
+                            // range to horizon, 3.28084ft per meter, 1.169 nautical mile, 1852.001 meters per nautical mile
                             if (gimbalPitch == 0)
                                 range = 1.169 * Math.sqrt(droneLocationAlt*3.28084) * 1852.001;
 
@@ -359,9 +357,7 @@ public class CompleteWidgetActivity extends Activity {
                             new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spiLatLng.latitude, spiLatLng.longitude, String.format("%s SPI",drone_name));
                         }
                     } else {
-                        Toast.makeText(getApplicationContext(), "No GPS, retrying...", Toast.LENGTH_SHORT).show();
-                        // stop the thread
-                        //sensor_handler.removeCallbacks(sensor_runnable);
+                        Log.i(TAG, "No GPS, retrying...");
                     }
                 }, sensor_delay);
 
@@ -396,8 +392,8 @@ public class CompleteWidgetActivity extends Activity {
                             Toast.makeText(getApplicationContext(), "RTMP Stream Established Successfully", Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        Toast.makeText(getApplicationContext(), "UAS streaming is active\nSending 1 Stream CoT", Toast.LENGTH_LONG).show();
-                        new SendCotTask(CompleteWidgetActivity.this).execute("stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
+                        Toast.makeText(getApplicationContext(), "UAS streaming is active\nSending 1 Stream CoT", Toast.LENGTH_SHORT).show();
+                        new SendCotTask(CompleteWidgetActivity.this).execute("start_stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
                         // once the stream is up, stop sending the stream CoT
                         stream_handler.removeCallbacks(stream_runnable);
                     }
