@@ -5,7 +5,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.amap.api.maps.model.LatLng;
+//import com.amap.api.maps.model.LatLng;
 import com.google.gson.annotations.JsonAdapter;
 
 import org.json.JSONException;
@@ -86,9 +86,9 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 jsonObject.put("FieldOfView", String.valueOf(fov));
 
                 if (parent.getDroneSPI() == null) {
-                    LatLng spiLatLng = parent.moveLatLng(new LatLng(latitude,longitude), range, heading);
-                    jsonObject.put("SPILatitude", spiLatLng.latitude);
-                    jsonObject.put("SPILongitude", spiLatLng.longitude);
+                    double[] spiLatLng = parent.moveLatLng(latitude,longitude, range, heading);
+                    jsonObject.put("SPILatitude", spiLatLng[0]);
+                    jsonObject.put("SPILongitude", spiLatLng[1]);
                     jsonObject.put("SPIName", String.format("%s_SPI", drone_name));
                 }
 
@@ -197,6 +197,7 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 if (jsonObject.get("Message").toString().equalsIgnoreCase("OK")) {
                     try {
                         JSONObject GUID = new JSONObject(jsonObject.get("Content").toString());
+                        Toast.makeText(parent.getApplicationContext(), String.format("Connected FTS Successfully"), Toast.LENGTH_SHORT).show();
                         String drone_guid = GUID.get("uid").toString();
                         String spi_guid = GUID.get("SPI_uid").toString();
                         Log.i(TAG, String.format("uid from FTS: %s", drone_guid));

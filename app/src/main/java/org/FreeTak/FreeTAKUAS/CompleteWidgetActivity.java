@@ -22,7 +22,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import com.amap.api.maps.model.LatLng;
+//import com.amap.api.maps.model.LatLng;
 import com.dji.mapkit.core.maps.DJIMap;
 import com.dji.mapkit.core.models.DJILatLng;
 
@@ -91,8 +91,8 @@ public class CompleteWidgetActivity extends Activity {
     private final Handler sensor_handler = new Handler();
     private final Handler stream_handler = new Handler();
     private Runnable sensor_runnable, stream_runnable;
-    // send 3 sensor updates a second
-    int sensor_delay = 333;
+    // send 4 sensor updates a second
+    int sensor_delay = 250;
     // every 3 seconds try to send a stream cot, stop when we send one successfully
     int stream_delay = 3000;
 
@@ -125,7 +125,7 @@ public class CompleteWidgetActivity extends Activity {
         display.getRealSize(outPoint);
         deviceHeight = outPoint.y;
         deviceWidth = outPoint.x;
-
+/*
         mapWidget = findViewById(R.id.map_widget);
         mapWidget.initAMap(new MapWidget.OnMapReadyListener() {
             @Override
@@ -140,7 +140,7 @@ public class CompleteWidgetActivity extends Activity {
             }
         });
         mapWidget.onCreate(savedInstanceState);
-
+*/
         parentView = (ViewGroup) findViewById(R.id.root_view);
 
         fpvOverlayWidget = findViewById(R.id.fpv_overlay_widget);
@@ -288,9 +288,9 @@ public class CompleteWidgetActivity extends Activity {
                     range = Math.abs(range);
                     Log.i(TAG, String.format("GeoObject Range: %f", range));
 
-                    LatLng geoObjLatLng = moveLatLng(new LatLng(droneLocationLat,droneLocationLng), range, droneHeading);
-                    Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f",geoObjLatLng.latitude,geoObjLatLng.longitude));
-                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng.latitude, geoObjLatLng.longitude, "pending", "target", droneHeading);
+                    double[] geoObjLatLng = moveLatLng(droneLocationLat, droneLocationLng, range, droneHeading);
+                    Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f",geoObjLatLng[0],geoObjLatLng[1]));
+                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng[0], geoObjLatLng[1], "pending", "target", droneHeading);
                 }
                 return false;
             }
@@ -352,9 +352,9 @@ public class CompleteWidgetActivity extends Activity {
                             range = Math.abs(range);
                             Log.i(TAG, String.format("SPI Range: %f",range));
 
-                            LatLng spiLatLng = moveLatLng(new LatLng(droneLocationLat, droneLocationLng), range, droneHeading);
-                            Log.i(TAG, String.format("Sending SPI lat: %f lng: %f",spiLatLng.latitude, spiLatLng.longitude));
-                            new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spiLatLng.latitude, spiLatLng.longitude, String.format("%s SPI",drone_name));
+                            double[] spiLatLng = moveLatLng(droneLocationLat, droneLocationLng, range, droneHeading);
+                            Log.i(TAG, String.format("Sending SPI lat: %f lng: %f",spiLatLng[0], spiLatLng[1]));
+                            new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spiLatLng[0], spiLatLng[1], String.format("%s SPI",drone_name));
                         }
                     } else {
                         Log.i(TAG, "No GPS, retrying...");
@@ -407,7 +407,7 @@ public class CompleteWidgetActivity extends Activity {
             Toast.makeText(getApplicationContext(), "ERROR: Flight Controller did not init\nCheck USB connection to controller", Toast.LENGTH_LONG).show();
         }
 
-        mapWidget.onResume();
+        //mapWidget.onResume();
     }
 
     private boolean isFlightControllerSupported() {
@@ -448,21 +448,13 @@ public class CompleteWidgetActivity extends Activity {
         }
     }
 
-    /**
-     * move latlng point by rang and bearing
-     *
-     * @param latLng  point
-     * @param range   range in meters
-     * @param bearing bearing in degrees
-     * @return new LatLng
-     */
-    public static LatLng moveLatLng(LatLng latLng, double range, double bearing) {
+    public static double[] moveLatLng(double latitude, double longitude, double range, double bearing) {
         double EarthRadius = 6378137.0;
         double DegreesToRadians = Math.PI / 180.0;
         double RadiansToDegrees = 180.0 / Math.PI;
 
-        final double latA = latLng.latitude * DegreesToRadians;
-        final double lonA = latLng.longitude * DegreesToRadians;
+        final double latA = latitude * DegreesToRadians;
+        final double lonA = longitude * DegreesToRadians;
         final double angularDistance = range / EarthRadius;
         final double trueCourse = bearing * DegreesToRadians;
 
@@ -476,7 +468,7 @@ public class CompleteWidgetActivity extends Activity {
 
         final double lon = ((lonA + dlon + Math.PI) % (Math.PI * 2)) - Math.PI;
 
-        return new LatLng(lat * RadiansToDegrees, lon * RadiansToDegrees);
+        return new double[] {lat * RadiansToDegrees, lon * RadiansToDegrees};
     }
 
     /**
@@ -565,7 +557,7 @@ public class CompleteWidgetActivity extends Activity {
             stream_handler.removeCallbacks(stream_runnable);
         }
 
-        mapWidget.onPause();
+        //mapWidget.onPause();
         super.onPause();
     }
 
@@ -580,20 +572,20 @@ public class CompleteWidgetActivity extends Activity {
             l.stopStream();
             stream_handler.removeCallbacks(stream_runnable);
         }
-        mapWidget.onDestroy();
+        //mapWidget.onDestroy();
         super.onDestroy();
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        mapWidget.onSaveInstanceState(outState);
+        //mapWidget.onSaveInstanceState(outState);
     }
 
     @Override
     public void onLowMemory() {
         super.onLowMemory();
-        mapWidget.onLowMemory();
+        //mapWidget.onLowMemory();
     }
 
     private class ResizeAnimation extends Animation {

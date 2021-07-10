@@ -33,7 +33,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.amap.api.maps.model.LatLng;
+//import com.amap.api.maps.model.LatLng;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
@@ -182,7 +182,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         versionText.setText(R.string.app_version);
         //findViewById((R.id.enable_stream).setOnCheckedChangeListener(this));
         FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
-        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
+        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, "204.48.30.216:19023"));
         FtsIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -223,7 +223,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         FtsApiEditText = (EditText) findViewById(R.id.edittext_fts_apikey);
-        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, ""));
+        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, "token"));
         FtsApiEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -264,7 +264,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         RtmpIpEditText = (EditText) findViewById(R.id.edittext_rtmp_ip);
-        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, ""));
+        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, "64.227.70.49:1935"));
         RtmpIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -305,7 +305,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         DroneNameEditText = (EditText) findViewById(R.id.edittext_drone_name);
-        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, ""));
+        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, "djcombo"));
         DroneNameEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -433,7 +433,11 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 Toast.makeText(getApplicationContext(), "No controller detected and/or configuration is missing!", Toast.LENGTH_SHORT).show();
                 return;
             }
-        } else if (id == R.id.bt_customized_ui_widgets) {
+            Intent intent = new Intent(this, nextActivityClass);
+            startActivity(intent);
+        }
+        /*
+        else if (id == R.id.bt_customized_ui_widgets) {
             nextActivityClass = CustomizedWidgetsActivity.class;
         } else {
             nextActivityClass = MapWidgetActivity.class;
@@ -447,13 +451,14 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             popup.show();
             return;
         }
-
         Intent intent = new Intent(this, nextActivityClass);
         startActivity(intent);
+        */
     }
 
     @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
+
         Intent intent = new Intent(this, MapWidgetActivity.class);
         int mapBrand = 0;
         switch (menuItem.getItemId()) {
@@ -472,6 +477,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         }
         intent.putExtra(MapWidgetActivity.MAP_PROVIDER, mapBrand);
         startActivity(intent);
+
         return false;
     }
 

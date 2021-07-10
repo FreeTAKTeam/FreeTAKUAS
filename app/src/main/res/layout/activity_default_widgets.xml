@@ -27,20 +27,16 @@
         android:id="@+id/fpv_overlay_widget"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
-<!--
-    <dji.ux.widget.FPVOverlayWidget
-        android:id="@+id/fpv_overlay_widget_cot_dropper"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
--->
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginBottom="40dp"
         android:layout_toRightOf="@+id/TakeOffReturnPanel"
         android:layout_toLeftOf="@+id/CameraCapturePanel"
-        android:layout_below="@+id/camera"
         tools:ignore="RtlHardcoded">
+        <!---android:layout_below="@+id/camera"-->
+
 
         <ImageView
             android:id="@+id/crosshair"
@@ -134,7 +130,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="5dp"
-        android:layout_below="@id/camera"
+
         android:layout_toLeftOf="@+id/CameraCapturePanel"
         android:background="@color/dark_gray"
         android:orientation="horizontal">
@@ -167,7 +163,7 @@
         android:layout_width="50dp"
         android:layout_height="210dp"
         tools:ignore="RtlHardcoded"/>
-
+<!--
     <dji.ux.widget.MapWidget
         android:id="@+id/map_widget"
         android:layout_width="150dp"
@@ -177,13 +173,13 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
         android:visibility="invisible"/>
-
+-->
     <!-- Everything below this line will appear on top of the full-screen map widget -->
 
     <dji.ux.widget.controls.CameraControlsWidget
         android:id="@+id/CameraCapturePanel"
         android:layout_alignParentRight="true"
-        android:layout_below="@id/camera"
+
         android:layout_width="50dp"
         android:layout_height="213dp"
         android:layout_marginTop="5dp"
@@ -286,7 +282,7 @@
 
     <dji.ux.panel.CameraSettingExposurePanel
         android:layout_width="180dp"
-        android:layout_below="@id/camera"
+
         android:layout_toLeftOf="@+id/CameraCapturePanel"
         android:gravity="center"
         android:layout_height="263dp"
@@ -296,7 +292,7 @@
     <dji.ux.panel.CameraSettingAdvancedPanel
         android:layout_width="180dp"
         android:layout_height="263dp"
-        android:layout_below="@id/camera"
+
         android:layout_toLeftOf="@+id/CameraCapturePanel"
         android:gravity="center"
         android:visibility="gone"
@@ -314,7 +310,7 @@
     <dji.ux.widget.ColorWaveformWidget
         android:layout_width="394dp"
         android:layout_height="300dp"
-        android:layout_below="@id/camera"
+
         android:gravity="center"
         android:layout_centerInParent="true"
         android:visibility="gone"/>

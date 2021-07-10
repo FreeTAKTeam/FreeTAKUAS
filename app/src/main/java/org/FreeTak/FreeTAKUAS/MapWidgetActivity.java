@@ -1,3 +1,4 @@
+
 package org.FreeTak.FreeTAKUAS;
 
 import android.app.Activity;
@@ -28,11 +29,13 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
+/*
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.model.HeatmapTileProvider;
 import com.amap.api.maps.model.TileOverlay;
 import com.amap.api.maps.model.TileOverlayOptions;
+*/
+
 import com.dji.mapkit.core.maps.DJIMap;
 import com.dji.mapkit.core.models.DJILatLng;
 import com.dji.mapkit.core.models.annotations.DJIMarker;
@@ -44,10 +47,11 @@ import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+/*
 import com.here.android.mpa.common.GeoCoordinate;
 import com.here.android.mpa.mapping.Map;
 import com.here.android.mpa.mapping.MapOverlay;
-
+*/
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,7 +61,7 @@ import java.util.Random;
 import dji.common.flightcontroller.flyzone.FlyZoneCategory;
 import dji.ux.widget.MapWidget;
 
-import static com.here.android.mpa.common.MapSettings.setIsolatedDiskCacheRootPath;
+//import static com.here.android.mpa.common.MapSettings.setIsolatedDiskCacheRootPath;
 
 public class MapWidgetActivity extends Activity implements CompoundButton.OnCheckedChangeListener,
     RadioGroup.OnCheckedChangeListener,
@@ -74,13 +78,13 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
     private SeekBar lineWidthPicker;
     private int lineWidthValue;
     private TextView lineColor;
-    private MapOverlay mapOverlay;
+    //private MapOverlay mapOverlay;
     private GroundOverlay groundOverlay;
-    private TileOverlay tileOverlay;
+    //private TileOverlay tileOverlay;
     private int mapProvider;
-    private Map hereMap;
+    //private Map hereMap;
     private GoogleMap googleMap;
-    private AMap aMap;
+    //private AMap aMap;
     private ScrollView scrollView;
     private ImageButton btnPanel;
     private boolean isPanelOpen = true;
@@ -144,11 +148,13 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
         mapProvider = intent.getIntExtra(MAP_PROVIDER, 0);
         switch (mapProvider) {
             case 0:
+                /*
                 boolean success = setIsolatedDiskCacheRootPath(
                         getExternalFilesDir(null) + File.separator + ".here-maps-cache");
                 if (success) {
                     mapWidget.initHereMap(onMapReadyListener);
                 }
+                */
                 break;
             case 1:
                 mapWidget.initGoogleMap(onMapReadyListener);
@@ -463,6 +469,7 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
         float testLng = -122.1430f;
         switch (mapProvider) {
             case 0:
+                /*
                 if (mapOverlay == null) {
                     hereMap = (Map) mapWidget.getMap().getMap();
                     ImageView overlayView = new ImageView(MapWidgetActivity.this);
@@ -474,6 +481,7 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
                     hereMap.removeMapOverlay(mapOverlay);
                     mapOverlay = null;
                 }
+                */
                 break;
             case 1:
                 if (groundOverlay == null) {
@@ -497,6 +505,7 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
                 }
                 break;
             case 2:
+                /*
                 if (tileOverlay == null) {
                     aMap = (AMap) mapWidget.getMap().getMap();
                     com.amap.api.maps.model.LatLng[] latlngs = new com.amap.api.maps.model.LatLng[500];
@@ -517,6 +526,7 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
                     tileOverlay.remove();
                     tileOverlay = null;
                 }
+                 */
                 break;
         }
     }
