@@ -463,7 +463,7 @@ public class CompleteWidgetActivity extends Activity {
 
         final double latA = latLng.latitude * DegreesToRadians;
         final double lonA = latLng.longitude * DegreesToRadians;
-        final double angularDistance = (30 + range) / EarthRadius;
+        final double angularDistance = range / EarthRadius;
         final double trueCourse = bearing * DegreesToRadians;
 
         final double lat = Math.asin(
