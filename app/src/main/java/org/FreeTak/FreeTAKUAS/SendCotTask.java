@@ -73,7 +73,7 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 if (altitude == 0)
                     range = 0.001 / Math.tan(Math.toRadians(gimbalPitch));
                 else
-                    range = altitude / Math.tan(Math.toRadians(gimbalPitch));
+                    range = (altitude) / Math.tan(Math.toRadians(gimbalPitch));
 
                 // range to horizon, 3.28084ft per meter, 1.169 nautical mile, 1852.001 meters per nautical mile
                 if (gimbalPitch == 0)
