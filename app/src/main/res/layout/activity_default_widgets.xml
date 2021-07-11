@@ -34,8 +34,8 @@
         android:layout_marginBottom="40dp"
         android:layout_toRightOf="@+id/TakeOffReturnPanel"
         android:layout_toLeftOf="@+id/CameraCapturePanel"
+        android:layout_below="@+id/camera"
         tools:ignore="RtlHardcoded">
-        <!---android:layout_below="@+id/camera"-->
 
 
         <ImageView
@@ -86,7 +86,7 @@
         android:id="@+id/remaining_flight_time"
         android:background="@color/transparent"
         android:layout_height="20dp"/>
-    <!--
+
     <LinearLayout
         android:id="@+id/camera"
         android:layout_alignParentRight="true"
@@ -96,7 +96,7 @@
         android:layout_marginTop="15dp"
         android:background="@color/dark_gray"
         android:orientation="horizontal">
-
+    <!--
         <dji.ux.widget.config.CameraConfigISOAndEIWidget
             android:layout_width="50dp"
             android:layout_height="25dp"/>
@@ -123,8 +123,9 @@
         <dji.ux.widget.config.CameraConfigSSDWidget
             android:layout_width="125dp"
             android:layout_height="25dp"/>
-    </LinearLayout>
     -->
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/camera2"
         android:layout_width="wrap_content"
@@ -163,17 +164,16 @@
         android:layout_width="50dp"
         android:layout_height="210dp"
         tools:ignore="RtlHardcoded"/>
-<!--
-    <dji.ux.widget.MapWidget
-        android:id="@+id/map_widget"
-        android:layout_width="150dp"
-        android:layout_height="100dp"
-        android:layout_marginRight="12dp"
-        android:layout_marginBottom="12dp"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentBottom="true"
-        android:visibility="invisible"/>
--->
+
+        <dji.ux.widget.MapWidget
+            android:id="@+id/map_widget"
+            android:layout_width="150dp"
+            android:layout_height="100dp"
+            android:layout_marginRight="12dp"
+            android:layout_marginBottom="12dp"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true" />
+
     <!-- Everything below this line will appear on top of the full-screen map widget -->
 
     <dji.ux.widget.controls.CameraControlsWidget

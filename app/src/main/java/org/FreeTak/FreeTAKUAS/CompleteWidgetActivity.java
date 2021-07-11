@@ -125,8 +125,9 @@ public class CompleteWidgetActivity extends Activity {
         display.getRealSize(outPoint);
         deviceHeight = outPoint.y;
         deviceWidth = outPoint.x;
-/*
+
         mapWidget = findViewById(R.id.map_widget);
+        /*
         mapWidget.initAMap(new MapWidget.OnMapReadyListener() {
             @Override
             public void onMapReady(@NonNull DJIMap map) {
@@ -139,12 +140,14 @@ public class CompleteWidgetActivity extends Activity {
                 map.getUiSettings().setZoomControlsEnabled(false);
             }
         });
+        */
         mapWidget.onCreate(savedInstanceState);
-*/
+
         parentView = (ViewGroup) findViewById(R.id.root_view);
 
         fpvOverlayWidget = findViewById(R.id.fpv_overlay_widget);
         fpvOverlayWidget.setSpotMeteringEnabled(false);
+        fpvOverlayWidget.setTouchFocusEnabled(false);
 
         fpvWidget = findViewById(R.id.fpv_widget);
         fpvWidget.setOnClickListener(new View.OnClickListener() {
@@ -153,6 +156,7 @@ public class CompleteWidgetActivity extends Activity {
                 onViewClick(fpvWidget);
             }
         });
+
 
         primaryVideoView = (RelativeLayout) findViewById(R.id.fpv_container);
         secondaryVideoView = (FrameLayout) findViewById(R.id.secondary_video_view);
@@ -163,6 +167,7 @@ public class CompleteWidgetActivity extends Activity {
                 swapVideoSource();
             }
         });
+
         if (VideoFeeder.getInstance() != null) {
             //If secondary video feed is already initialized, get video source
             updateSecondaryVideoVisibility(VideoFeeder.getInstance().getSecondaryVideoFeed().getVideoSource() != PhysicalSource.UNKNOWN);
@@ -171,6 +176,7 @@ public class CompleteWidgetActivity extends Activity {
                     .addVideoActiveStatusListener(isActive ->
                             runOnUiThread(() -> updateSecondaryVideoVisibility(isActive)));
         }
+
     }
 
     private void onViewClick(View view) {
@@ -266,6 +272,7 @@ public class CompleteWidgetActivity extends Activity {
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+
 
         crossHairView = findViewById(R.id.crosshair);
         crossHairView.setOnTouchListener(new View.OnTouchListener() {
@@ -407,7 +414,7 @@ public class CompleteWidgetActivity extends Activity {
             Toast.makeText(getApplicationContext(), "ERROR: Flight Controller did not init\nCheck USB connection to controller", Toast.LENGTH_LONG).show();
         }
 
-        //mapWidget.onResume();
+        mapWidget.onResume();
     }
 
     private boolean isFlightControllerSupported() {
@@ -557,7 +564,7 @@ public class CompleteWidgetActivity extends Activity {
             stream_handler.removeCallbacks(stream_runnable);
         }
 
-        //mapWidget.onPause();
+        mapWidget.onPause();
         super.onPause();
     }
 
@@ -572,20 +579,20 @@ public class CompleteWidgetActivity extends Activity {
             l.stopStream();
             stream_handler.removeCallbacks(stream_runnable);
         }
-        //mapWidget.onDestroy();
+        mapWidget.onDestroy();
         super.onDestroy();
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        //mapWidget.onSaveInstanceState(outState);
+        mapWidget.onSaveInstanceState(outState);
     }
 
     @Override
     public void onLowMemory() {
         super.onLowMemory();
-        //mapWidget.onLowMemory();
+        mapWidget.onLowMemory();
     }
 
     private class ResizeAnimation extends Animation {

@@ -148,13 +148,13 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
         mapProvider = intent.getIntExtra(MAP_PROVIDER, 0);
         switch (mapProvider) {
             case 0:
-                /*
+/*
                 boolean success = setIsolatedDiskCacheRootPath(
                         getExternalFilesDir(null) + File.separator + ".here-maps-cache");
                 if (success) {
                     mapWidget.initHereMap(onMapReadyListener);
                 }
-                */
+*/
                 break;
             case 1:
                 mapWidget.initGoogleMap(onMapReadyListener);
@@ -469,7 +469,7 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
         float testLng = -122.1430f;
         switch (mapProvider) {
             case 0:
-                /*
+/*
                 if (mapOverlay == null) {
                     hereMap = (Map) mapWidget.getMap().getMap();
                     ImageView overlayView = new ImageView(MapWidgetActivity.this);
@@ -481,7 +481,7 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
                     hereMap.removeMapOverlay(mapOverlay);
                     mapOverlay = null;
                 }
-                */
+*/
                 break;
             case 1:
                 if (groundOverlay == null) {
@@ -526,7 +526,7 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
                     tileOverlay.remove();
                     tileOverlay = null;
                 }
-                 */
+                */
                 break;
         }
     }
