@@ -312,6 +312,7 @@ public class CompleteWidgetActivity extends Activity {
                     });
 
                     final String[] names = new String[]{"Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel","India","Juliett","Kilo","Lima","Mike","November","Oscar","Papa","Quebec","Romeo","Sierra","Tango","Uniform","Victor","Whiskey","X-ray","Yankee","Zulu"};
+                    final int[] namesPicked = {0};
                     final String[] pickedName = new String[1];
                     pickedName[0] = names[0];
 
@@ -326,7 +327,8 @@ public class CompleteWidgetActivity extends Activity {
                         @Override
                         public void onValueChange(NumberPicker picker, final int oldVal, final int newVal) {
                             Log.d(TAG, String.format("GeoObj Name: %s", names[newVal]));
-                            pickedName[0] = names[newVal];
+                            pickedName[0] = String.format("%s-%d", names[newVal], namesPicked[0]);
+                            namesPicked[0]++;
                         }
                     });
 
