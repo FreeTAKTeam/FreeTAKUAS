@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Send GeoObject CoT"
+        android:textSize="30dp"
+        android:layout_marginBottom="10dp"
+        android:textColor="@color/red"/>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/title"
+        android:id="@+id/send">
+
+        <TextView
+            android:id="@+id/attitude_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Set Attitude"
+            android:layout_centerHorizontal="true"
+            android:textColor="@color/red" />
+
+        <NumberPicker
+            android:id="@+id/attitude"
+            android:layout_width="130dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/attitude_text"
+            />
+
+        <Button
+            android:id="@+id/sendPopupBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/attitude"
+            android:layout_centerHorizontal="true"
+            android:text="Send"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/send"
+        android:layout_below="@id/title"
+        android:id="@+id/cancel">
+
+        <TextView
+            android:id="@+id/name_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Set Name"
+            android:layout_centerHorizontal="true"
+            android:textColor="@color/red" />
+
+        <NumberPicker
+            android:id="@+id/name"
+            android:layout_width="130dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/name_text"
+            />
+
+        <Button
+            android:id="@+id/closePopupBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/name"
+            android:layout_centerHorizontal="true"
+            android:text="Cancel" />
+    </RelativeLayout>
+
+
+</RelativeLayout>

@@ -9,14 +9,20 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Display;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.NumberPicker;
+import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -74,6 +80,10 @@ public class CompleteWidgetActivity extends Activity {
     private CompassWidget compassWidget;
     private boolean isMapMini = true;
 
+    private Button closePopupBtn, sendPopupBtn;
+    private PopupWindow popupWindow;
+    private NumberPicker attitudesNP,namesNP;
+
     private String TAG = this.getClass().getName();
 
     private String FTS_DRONE_UID, DRONE_SPI_UID;
@@ -127,8 +137,7 @@ public class CompleteWidgetActivity extends Activity {
         deviceWidth = outPoint.x;
 
         mapWidget = findViewById(R.id.map_widget);
-        /*
-        mapWidget.initAMap(new MapWidget.OnMapReadyListener() {
+        mapWidget.initHereMap(new MapWidget.OnMapReadyListener() {
             @Override
             public void onMapReady(@NonNull DJIMap map) {
                 map.setOnMapClickListener(new DJIMap.OnMapClickListener() {
@@ -140,7 +149,7 @@ public class CompleteWidgetActivity extends Activity {
                 map.getUiSettings().setZoomControlsEnabled(false);
             }
         });
-        */
+
         mapWidget.onCreate(savedInstanceState);
 
         parentView = (ViewGroup) findViewById(R.id.root_view);
@@ -273,35 +282,97 @@ public class CompleteWidgetActivity extends Activity {
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
-
         crossHairView = findViewById(R.id.crosshair);
         crossHairView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    Toast.makeText(getApplicationContext(), "Sending GeoObject CoT", Toast.LENGTH_SHORT).show();
-                    // the range to the target
-                    double range;
-                    if (droneLocationAlt < 1)
-                        range = 0.001 / Math.tan(Math.toRadians(gimbalPitch));
-                    else
-                        range = droneLocationAlt / Math.tan(Math.toRadians(gimbalPitch));
 
-                    // range to horizon, 3.28084ft per meter, 1.169 nautical mile, 1852.001 meters per nautical mile
-                    if (gimbalPitch == 0)
-                        range = 1.169 * Math.sqrt(droneLocationAlt*3.28084) * 1852.001;
+                    LayoutInflater layoutInflater = (LayoutInflater) CompleteWidgetActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                    View geoObjView = layoutInflater.inflate(R.layout.geo_obj_popup, null);
 
-                    range = Math.abs(range);
-                    Log.i(TAG, String.format("GeoObject Range: %f", range));
+                    final String[] attitudes = new String[]{"friendly", "hostile", "neutral", "unknown"};
+                    final String[] pickedAttitude = new String[1];
+                    pickedAttitude[0] = attitudes[0];
 
-                    double[] geoObjLatLng = moveLatLng(droneLocationLat, droneLocationLng, range, droneHeading);
-                    Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f",geoObjLatLng[0],geoObjLatLng[1]));
-                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng[0], geoObjLatLng[1], "pending", "target", droneHeading);
+                    attitudesNP = geoObjView.findViewById(R.id.attitude);
+                    attitudesNP.setDisplayedValues(null);
+                    attitudesNP.setMinValue(0);
+                    attitudesNP.setMaxValue(attitudes.length - 1);
+                    attitudesNP.setWrapSelectorWheel(false);
+                    attitudesNP.setDisplayedValues(attitudes);
+
+                    attitudesNP.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+                        @Override
+                        public void onValueChange(NumberPicker picker, final int oldVal, final int newVal) {
+                            Log.d(TAG, String.format("GeoObj Attitude: %s", attitudes[newVal]));
+                            pickedAttitude[0] = attitudes[newVal];
+                        }
+                    });
+
+                    final String[] names = new String[]{"Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel","India","Juliett","Kilo","Lima","Mike","November","Oscar","Papa","Quebec","Romeo","Sierra","Tango","Uniform","Victor","Whiskey","X-ray","Yankee","Zulu"};
+                    final String[] pickedName = new String[1];
+                    pickedName[0] = names[0];
+
+                    namesNP = geoObjView.findViewById(R.id.name);
+                    namesNP.setDisplayedValues(null);
+                    namesNP.setMinValue(0);
+                    namesNP.setMaxValue(names.length - 1);
+                    namesNP.setWrapSelectorWheel(false);
+                    namesNP.setDisplayedValues(names);
+
+                    namesNP.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+                        @Override
+                        public void onValueChange(NumberPicker picker, final int oldVal, final int newVal) {
+                            Log.d(TAG, String.format("GeoObj Name: %s", names[newVal]));
+                            pickedName[0] = names[newVal];
+                        }
+                    });
+
+                    closePopupBtn = (Button) geoObjView.findViewById(R.id.closePopupBtn);
+                    sendPopupBtn = (Button) geoObjView.findViewById(R.id.sendPopupBtn);
+
+                    popupWindow = new PopupWindow(geoObjView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    popupWindow.showAtLocation(v, Gravity.CENTER, 0, 0);
+
+                    //close the popup window on button click
+                    closePopupBtn.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            popupWindow.dismiss();
+                        }
+                    });
+
+                    //send the cot
+                    sendPopupBtn.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Toast.makeText(getApplicationContext(), "Sending GeoObject CoT", Toast.LENGTH_SHORT).show();
+                            // the range to the target
+                            double range;
+                            if (droneLocationAlt < 1)
+                                range = 0.001 / Math.tan(Math.toRadians(gimbalPitch));
+                            else
+                                range = droneLocationAlt / Math.tan(Math.toRadians(gimbalPitch));
+
+                            // range to horizon, 3.28084ft per meter, 1.169 nautical mile, 1852.001 meters per nautical mile
+                            if (gimbalPitch == 0)
+                                range = 1.169 * Math.sqrt(droneLocationAlt * 3.28084) * 1852.001;
+
+                            range = Math.abs(range);
+                            Log.i(TAG, String.format("GeoObject Range: %f", range));
+
+                            double[] geoObjLatLng = moveLatLng(droneLocationLat, droneLocationLng, range, droneHeading);
+                            Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f", geoObjLatLng[0], geoObjLatLng[1]));
+                            new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng[0], geoObjLatLng[1], pickedAttitude[0], pickedName[0], droneHeading);
+                            popupWindow.dismiss();
+                        }
+                    });
                 }
                 return false;
-            }
-        });
+             }
+         });
 
         boolean controller_status = initFlightController();
         boolean gimbal_status = initGimbal();
