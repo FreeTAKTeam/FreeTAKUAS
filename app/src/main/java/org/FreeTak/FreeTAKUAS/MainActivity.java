@@ -177,7 +177,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         TextView versionText = (TextView) findViewById(R.id.app_version);
         versionText.setText(R.string.app_version);
         FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
-        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, "172.30.254.237:19023"));
+        //FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, "172.30.254.237:19023"));
+        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
         FtsIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -218,7 +219,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         FtsApiEditText = (EditText) findViewById(R.id.edittext_fts_apikey);
-        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, "apikey123"));
+        //FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, "apikey123"));
+        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, ""));
         FtsApiEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -259,7 +261,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         RtmpIpEditText = (EditText) findViewById(R.id.edittext_rtmp_ip);
-        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, "172.30.254.237:1935"));
+        //RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, "172.30.254.237:1935"));
+        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, ""));
         RtmpIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -300,7 +303,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         DroneNameEditText = (EditText) findViewById(R.id.edittext_drone_name);
-        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, "djcombo"));
+        //DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, "djcombo"));
+        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, ""));
         DroneNameEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {

@@ -112,10 +112,40 @@ public class CompleteWidgetActivity extends Activity {
     public double homeLocationLat, homeLocationLng;
     public float droneLocationAlt, gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading;
 
+    // this holds the geoobj names count
+    public Dictionary names = new Hashtable();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_default_widgets);
+
+        names.put("Alpha",0);
+        names.put("Bravo",0);
+        names.put("Charlie",0);
+        names.put("Delta",0);
+        names.put("Echo",0);
+        names.put("Foxtrot",0);
+        names.put("Golf",0);
+        names.put("Hotel",0);
+        names.put("India",0);
+        names.put("Juliett",0);
+        names.put("Kilo",0);
+        names.put("Lima",0);
+        names.put("Mike",0);
+        names.put("November",0);
+        names.put("Oscar",0);
+        names.put("Papa",0);
+        names.put("Quebec",0);
+        names.put("Romeo",0);
+        names.put("Sierra",0);
+        names.put("Tango",0);
+        names.put("Uniform",0);
+        names.put("Victor",0);
+        names.put("Whiskey",0);
+        names.put("X-ray",0);
+        names.put("Yankee",0);
+        names.put("Zulu",0);
 
         height = DensityUtil.dip2px(this, 100);
         width = DensityUtil.dip2px(this, 150);
@@ -292,7 +322,7 @@ public class CompleteWidgetActivity extends Activity {
                     LayoutInflater layoutInflater = (LayoutInflater) CompleteWidgetActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                     View geoObjView = layoutInflater.inflate(R.layout.geo_obj_popup, null);
 
-                    final String[] attitudes = new String[]{"friendly", "hostile", "neutral", "unknown"};
+                    final String[] attitudes = new String[]{"unknown", "friendly", "hostile", "neutral"};
                     final String[] pickedAttitude = new String[1];
                     pickedAttitude[0] = attitudes[0];
 
@@ -300,7 +330,7 @@ public class CompleteWidgetActivity extends Activity {
                     attitudesNP.setDisplayedValues(null);
                     attitudesNP.setMinValue(0);
                     attitudesNP.setMaxValue(attitudes.length - 1);
-                    attitudesNP.setWrapSelectorWheel(false);
+                    //attitudesNP.setWrapSelectorWheel(false);
                     attitudesNP.setDisplayedValues(attitudes);
 
                     attitudesNP.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
@@ -311,24 +341,24 @@ public class CompleteWidgetActivity extends Activity {
                         }
                     });
 
-                    final String[] names = new String[]{"Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel","India","Juliett","Kilo","Lima","Mike","November","Oscar","Papa","Quebec","Romeo","Sierra","Tango","Uniform","Victor","Whiskey","X-ray","Yankee","Zulu"};
-                    final int[] namesPicked = {0};
+                    final String[] geoObjNames = new String[]{"Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel","India","Juliett","Kilo","Lima","Mike","November","Oscar","Papa","Quebec","Romeo","Sierra","Tango","Uniform","Victor","Whiskey","X-ray","Yankee","Zulu"};
                     final String[] pickedName = new String[1];
-                    pickedName[0] = names[0];
+                    final int[] howMany = {(int) names.get("Alpha")};
+                    pickedName[0] = geoObjNames[0];
 
                     namesNP = geoObjView.findViewById(R.id.name);
                     namesNP.setDisplayedValues(null);
                     namesNP.setMinValue(0);
-                    namesNP.setMaxValue(names.length - 1);
-                    namesNP.setWrapSelectorWheel(false);
-                    namesNP.setDisplayedValues(names);
+                    namesNP.setMaxValue(geoObjNames.length - 1);
+                    //namesNP.setWrapSelectorWheel(false);
+                    namesNP.setDisplayedValues(geoObjNames);
 
                     namesNP.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
                         @Override
                         public void onValueChange(NumberPicker picker, final int oldVal, final int newVal) {
-                            Log.d(TAG, String.format("GeoObj Name: %s", names[newVal]));
-                            pickedName[0] = String.format("%s-%d", names[newVal], namesPicked[0]);
-                            namesPicked[0]++;
+                            pickedName[0] = geoObjNames[newVal];
+                            howMany[0] = (int) names.get(pickedName[0]);
+                            Log.d(TAG, String.format("GeoObj Name: %s Count: %d", pickedName[0], howMany[0]));
                         }
                     });
 
@@ -367,7 +397,11 @@ public class CompleteWidgetActivity extends Activity {
 
                             double[] geoObjLatLng = moveLatLng(droneLocationLat, droneLocationLng, range, droneHeading);
                             Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f", geoObjLatLng[0], geoObjLatLng[1]));
-                            new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng[0], geoObjLatLng[1], pickedAttitude[0], pickedName[0], droneHeading);
+
+                            // update the count for this name
+                            names.put(pickedName[0], howMany[0]+1);
+
+                            new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng[0], geoObjLatLng[1], pickedAttitude[0], String.format("%s-%d", pickedName[0], howMany[0]), droneHeading);
                             popupWindow.dismiss();
                         }
                     });
