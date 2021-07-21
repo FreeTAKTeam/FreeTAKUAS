@@ -55,14 +55,13 @@ import dji.sdk.gimbal.Gimbal;
 import dji.sdk.products.Aircraft;
 import dji.sdk.sdkmanager.DJISDKManager;
 import dji.sdk.sdkmanager.LiveStreamManager;
+import dji.sdk.sdkmanager.LiveVideoBitRateMode;
+import dji.sdk.sdkmanager.LiveVideoResolution;
 import dji.ux.widget.FPVOverlayWidget;
 import dji.ux.widget.FPVWidget;
 import dji.ux.widget.MapWidget;
 import dji.ux.widget.controls.CameraControlsWidget;
 import dji.ux.widget.dashboard.CompassWidget;
-
-import static java.lang.Math.cosh;
-import static java.lang.Math.tan;
 
 /**
  * Activity that shows all the UI elements together
@@ -102,7 +101,7 @@ public class CompleteWidgetActivity extends Activity {
     private final Handler stream_handler = new Handler();
     private Runnable sensor_runnable, stream_runnable;
     // send 4 sensor updates a second
-    int sensor_delay = 250;
+    int sensor_delay = 500;
     // every 3 seconds try to send a stream cot, stop when we send one successfully
     int stream_delay = 3000;
 
@@ -484,6 +483,10 @@ public class CompleteWidgetActivity extends Activity {
                         l.registerListener((x) -> {
                             Log.d(TAG, "LiveStream callback:" + x);
                         });
+
+                        //l.setLiveVideoResolution(new LiveVideoResolution(480, 360));
+                        //l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_480_360);
+                        //l.setLiveVideoBitRate(LiveVideoBitRateMode.AUTO.getValue());
                         l.setAudioMuted(true);
                         l.setVideoSource(LiveStreamManager.LiveStreamVideoSource.Primary);
                         l.setVideoEncodingEnabled(true);
