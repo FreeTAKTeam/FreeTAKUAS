@@ -82,7 +82,7 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                 range = Math.abs(range);
                 jsonObject.put("Range", String.valueOf(range));
 
-                double fov = Math.abs(5.25 * (tan(Math.toRadians(gimbalPitch)/2) * range));
+                double fov = Math.abs(4 * (tan(Math.toRadians(gimbalPitch)/2) * range));
                 jsonObject.put("FieldOfView", String.valueOf(fov));
 
                 if (parent.getDroneSPI() == null) {

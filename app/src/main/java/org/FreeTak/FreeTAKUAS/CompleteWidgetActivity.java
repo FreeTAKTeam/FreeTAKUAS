@@ -2,6 +2,8 @@ package org.FreeTak.FreeTAKUAS;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -18,6 +20,7 @@ import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.Transformation;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -25,15 +28,22 @@ import android.widget.NumberPicker;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 //import com.amap.api.maps.model.LatLng;
 import com.dji.mapkit.core.maps.DJIMap;
 import com.dji.mapkit.core.models.DJILatLng;
-
-import org.jetbrains.annotations.NotNull;
-
+/*
+import org.FreeTAKTeam.FreeTAKUAS.ml.ObjectDetectionMobileObjectLocalizerV11Metadata1;
+import org.tensorflow.lite.DataType;
+import org.tensorflow.lite.support.image.TensorImage;
+import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
+import org.tensorflow.lite.task.vision.detector.ObjectDetector;
+*/
+import java.io.IOException;
 import java.net.URL;
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -106,13 +116,17 @@ public class CompleteWidgetActivity extends Activity {
     int stream_delay = 3000;
 
     public String RTMP_URL = "";
+    public boolean rtmp_hd;
     public String FTS_IP, FTS_APIKEY, drone_name, rtmp_ip;
     public double droneLocationLat, droneLocationLng, droneDistance, droneHeading;
     public double homeLocationLat, homeLocationLng;
     public float droneLocationAlt, gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading;
 
+    public ToggleButton stream_toggle;
+    public boolean stream_enabled = false;
     // this holds the geoobj names count
-    public Dictionary names = new Hashtable();
+    private Dictionary names = new Hashtable();
+    //private ObjectDetectionMobileObjectLocalizerV11Metadata1 model = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,8 +168,9 @@ public class CompleteWidgetActivity extends Activity {
         FTS_APIKEY = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsapikey","");
         drone_name = PreferenceManager.getDefaultSharedPreferences(this).getString("drone_name","");
         rtmp_ip = PreferenceManager.getDefaultSharedPreferences(this).getString("rtmp_ip","");
+        rtmp_hd = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("rtmp_hd",false);
 
-        String rtmp_path = "/live/UAS-" + drone_name /*+ new Random().nextInt(9999)*/;
+        String rtmp_path = "/live/UAS-" + drone_name;
         RTMP_URL = "rtmp://" + rtmp_ip + rtmp_path;
 
         WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
@@ -166,17 +181,9 @@ public class CompleteWidgetActivity extends Activity {
         deviceWidth = outPoint.x;
 
         mapWidget = findViewById(R.id.map_widget);
-        mapWidget.initHereMap(new MapWidget.OnMapReadyListener() {
-            @Override
-            public void onMapReady(@NonNull DJIMap map) {
-                map.setOnMapClickListener(new DJIMap.OnMapClickListener() {
-                    @Override
-                    public void onMapClick(DJILatLng latLng) {
-                        onViewClick(mapWidget);
-                    }
-                });
-                map.getUiSettings().setZoomControlsEnabled(false);
-            }
+        mapWidget.initHereMap(map -> {
+            map.setOnMapClickListener(latLng -> onViewClick(mapWidget));
+            map.getUiSettings().setZoomControlsEnabled(false);
         });
 
         mapWidget.onCreate(savedInstanceState);
@@ -195,16 +202,11 @@ public class CompleteWidgetActivity extends Activity {
             }
         });
 
-
         primaryVideoView = (RelativeLayout) findViewById(R.id.fpv_container);
+
         secondaryVideoView = (FrameLayout) findViewById(R.id.secondary_video_view);
         secondaryFPVWidget = findViewById(R.id.secondary_fpv_widget);
-        secondaryFPVWidget.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                swapVideoSource();
-            }
-        });
+        secondaryFPVWidget.setOnClickListener(view -> swapVideoSource());
 
         if (VideoFeeder.getInstance() != null) {
             //If secondary video feed is already initialized, get video source
@@ -214,7 +216,36 @@ public class CompleteWidgetActivity extends Activity {
                     .addVideoActiveStatusListener(isActive ->
                             runOnUiThread(() -> updateSecondaryVideoVisibility(isActive)));
         }
+/*
+        try {
+            model = ObjectDetectionMobileObjectLocalizerV11Metadata1.newInstance(this.getApplicationContext());
+        } catch (IOException e) {
+            Log.i(TAG, String.format("Failed to create TFLite model: %s",e));
+        }
 
+        VideoFeeder.getInstance().getSecondaryVideoFeed().addVideoDataListener((videoBuffer, size) -> {
+            try {
+                Log.i(TAG, String.format("In addVideoDataListener: size=%d",size));
+
+                //Bitmap bitmap = fpvWidget.getBitmap();
+                Bitmap bitmap = BitmapFactory.decodeByteArray(videoBuffer,0, size);
+                // Creates inputs for reference.
+                TensorImage image = TensorImage.fromBitmap(bitmap);
+
+                // Runs model inference and gets result.
+                ObjectDetectionMobileObjectLocalizerV11Metadata1.Outputs outputs = model.process(image);
+                TensorBuffer locations = outputs.getLocationsAsTensorBuffer();
+                TensorBuffer classes = outputs.getClassesAsTensorBuffer();
+                TensorBuffer scores = outputs.getScoresAsTensorBuffer();
+                TensorBuffer numberOfDetections = outputs.getNumberOfDetectionsAsTensorBuffer();
+
+                Log.i(TAG, String.format("TensorFlow data:\n\tLocations: %s\n\tClasses:%s\n\tScores:%s\n\tnumberOfDetections:%s", locations.toString(),classes.toString(),scores.toString(),numberOfDetections.toString()));
+
+            } catch (Exception e) {
+                Log.i(TAG, String.format("Something bad happened doing TFLite: %s", e));
+            }
+        });
+*/
     }
 
     private void onViewClick(View view) {
@@ -311,103 +342,141 @@ public class CompleteWidgetActivity extends Activity {
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
-        crossHairView = findViewById(R.id.crosshair);
-        crossHairView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
+        l = DJISDKManager.getInstance().getLiveStreamManager();
+        stream_toggle = findViewById(R.id.stream_toggle);
+        stream_toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                stream_toggle.setChecked(true);
+                stream_enabled = true;
+                // send stream 1 stream CoT
+                stream_handler.postDelayed(stream_runnable = () -> {
+                    stream_handler.postDelayed(stream_runnable, stream_delay);
+                    if (!l.isStreaming() && stream_enabled) {
+                        Log.i(TAG,String.format("RTMP URL: %s", RTMP_URL));
 
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-
-                    LayoutInflater layoutInflater = (LayoutInflater) CompleteWidgetActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                    View geoObjView = layoutInflater.inflate(R.layout.geo_obj_popup, null);
-
-                    final String[] attitudes = new String[]{"unknown", "friendly", "hostile", "neutral"};
-                    final String[] pickedAttitude = new String[1];
-                    pickedAttitude[0] = attitudes[0];
-
-                    attitudesNP = geoObjView.findViewById(R.id.attitude);
-                    attitudesNP.setDisplayedValues(null);
-                    attitudesNP.setMinValue(0);
-                    attitudesNP.setMaxValue(attitudes.length - 1);
-                    //attitudesNP.setWrapSelectorWheel(false);
-                    attitudesNP.setDisplayedValues(attitudes);
-
-                    attitudesNP.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-                        @Override
-                        public void onValueChange(NumberPicker picker, final int oldVal, final int newVal) {
-                            Log.d(TAG, String.format("GeoObj Attitude: %s", attitudes[newVal]));
-                            pickedAttitude[0] = attitudes[newVal];
+                        if (rtmp_hd) {
+                            Log.i(TAG, "Streaming in 1080p");
+                            l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_1920_1080 );
+                        } else {
+                            Log.i(TAG, "Streaming in 480p");
+                            l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_480_360 );
                         }
-                    });
 
-                    final String[] geoObjNames = new String[]{"Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel","India","Juliett","Kilo","Lima","Mike","November","Oscar","Papa","Quebec","Romeo","Sierra","Tango","Uniform","Victor","Whiskey","X-ray","Yankee","Zulu"};
-                    final String[] pickedName = new String[1];
-                    final int[] howMany = {(int) names.get("Alpha")};
-                    pickedName[0] = geoObjNames[0];
+                        l.setLiveVideoBitRate(LiveVideoBitRateMode.AUTO.getValue());
+                        l.setVideoSource(LiveStreamManager.LiveStreamVideoSource.Primary);
+                        l.setAudioStreamingEnabled(false);
+                        l.setAudioMuted(true);
+                        l.setVideoEncodingEnabled(true);
+                        l.setLiveUrl(RTMP_URL);
 
-                    namesNP = geoObjView.findViewById(R.id.name);
-                    namesNP.setDisplayedValues(null);
-                    namesNP.setMinValue(0);
-                    namesNP.setMaxValue(geoObjNames.length - 1);
-                    //namesNP.setWrapSelectorWheel(false);
-                    namesNP.setDisplayedValues(geoObjNames);
-
-                    namesNP.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-                        @Override
-                        public void onValueChange(NumberPicker picker, final int oldVal, final int newVal) {
-                            pickedName[0] = geoObjNames[newVal];
-                            howMany[0] = (int) names.get(pickedName[0]);
-                            Log.d(TAG, String.format("GeoObj Name: %s Count: %d", pickedName[0], howMany[0]));
+                        int rc = 0;
+                        rc = l.startStream();
+                        if (rc != 0) {
+                            l.stopStream();
+                            // 254 probably means the user put the wrong IP:Port in
+                            if (rc == 254) {
+                                Toast.makeText(getApplicationContext(), "ERROR: Check your RTMP configuration\nStopping stream attempts", Toast.LENGTH_LONG).show();
+                                // kill this thread, the IP:Port are bad
+                                stream_handler.removeCallbacks(stream_runnable);
+                            }
+                        } else {
+                            new SendCotTask(CompleteWidgetActivity.this).execute("start_stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
+                            Toast.makeText(getApplicationContext(), "RTMP Stream Established Successfully", Toast.LENGTH_SHORT).show();
                         }
-                    });
-
-                    closePopupBtn = (Button) geoObjView.findViewById(R.id.closePopupBtn);
-                    sendPopupBtn = (Button) geoObjView.findViewById(R.id.sendPopupBtn);
-
-                    popupWindow = new PopupWindow(geoObjView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                    popupWindow.showAtLocation(v, Gravity.CENTER, 0, 0);
-
-                    //close the popup window on button click
-                    closePopupBtn.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            popupWindow.dismiss();
-                        }
-                    });
-
-                    //send the cot
-                    sendPopupBtn.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            Toast.makeText(getApplicationContext(), "Sending GeoObject CoT", Toast.LENGTH_SHORT).show();
-                            // the range to the target
-                            double range;
-                            if (droneLocationAlt < 1)
-                                range = 0.001 / Math.tan(Math.toRadians(gimbalPitch));
-                            else
-                                range = droneLocationAlt / Math.tan(Math.toRadians(gimbalPitch));
-
-                            // range to horizon, 3.28084ft per meter, 1.169 nautical mile, 1852.001 meters per nautical mile
-                            if (gimbalPitch == 0)
-                                range = 1.169 * Math.sqrt(droneLocationAlt * 3.28084) * 1852.001;
-
-                            range = Math.abs(range);
-                            Log.i(TAG, String.format("GeoObject Range: %f", range));
-
-                            double[] geoObjLatLng = moveLatLng(droneLocationLat, droneLocationLng, range, droneHeading);
-                            Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f", geoObjLatLng[0], geoObjLatLng[1]));
-
-                            // update the count for this name
-                            names.put(pickedName[0], howMany[0]+1);
-
-                            new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng[0], geoObjLatLng[1], pickedAttitude[0], String.format("%s-%d", pickedName[0], howMany[0]), droneHeading);
-                            popupWindow.dismiss();
-                        }
-                    });
+                    }
+                }, stream_delay);
+            } else {
+                stream_toggle.setChecked(false);
+                stream_enabled = false;
+                stream_handler.removeCallbacks(stream_runnable);
+                // stop the stream
+                if (l.isStreaming()) {
+                    Toast.makeText(getApplicationContext(), "Stopping RTMP Stream", Toast.LENGTH_SHORT).show();
+                    l.stopStream();
                 }
-                return false;
-             }
-         });
+            }
+        });
+
+        crossHairView = findViewById(R.id.crosshair);
+        crossHairView.setOnTouchListener((v, event) -> {
+
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+
+                LayoutInflater layoutInflater = (LayoutInflater) CompleteWidgetActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                View geoObjView = layoutInflater.inflate(R.layout.geo_obj_popup, null);
+
+                final String[] attitudes = new String[]{"unknown", "friendly", "hostile", "neutral"};
+                final String[] pickedAttitude = new String[1];
+                pickedAttitude[0] = attitudes[0];
+
+                attitudesNP = geoObjView.findViewById(R.id.attitude);
+                attitudesNP.setDisplayedValues(null);
+                attitudesNP.setMinValue(0);
+                attitudesNP.setMaxValue(attitudes.length - 1);
+                //attitudesNP.setWrapSelectorWheel(false);
+                attitudesNP.setDisplayedValues(attitudes);
+
+                attitudesNP.setOnValueChangedListener((picker, oldVal, newVal) -> {
+                    Log.d(TAG, String.format("GeoObj Attitude: %s", attitudes[newVal]));
+                    pickedAttitude[0] = attitudes[newVal];
+                });
+
+                final String[] geoObjNames = new String[]{"Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel","India","Juliett","Kilo","Lima","Mike","November","Oscar","Papa","Quebec","Romeo","Sierra","Tango","Uniform","Victor","Whiskey","X-ray","Yankee","Zulu"};
+                final String[] pickedName = new String[1];
+                final int[] howMany = {(int) names.get("Alpha")};
+                pickedName[0] = geoObjNames[0];
+
+                namesNP = geoObjView.findViewById(R.id.name);
+                namesNP.setDisplayedValues(null);
+                namesNP.setMinValue(0);
+                namesNP.setMaxValue(geoObjNames.length - 1);
+                //namesNP.setWrapSelectorWheel(false);
+                namesNP.setDisplayedValues(geoObjNames);
+
+                namesNP.setOnValueChangedListener((picker, oldVal, newVal) -> {
+                    pickedName[0] = geoObjNames[newVal];
+                    howMany[0] = (int) names.get(pickedName[0]);
+                    Log.d(TAG, String.format("GeoObj Name: %s Count: %d", pickedName[0], howMany[0]));
+                });
+
+                closePopupBtn = (Button) geoObjView.findViewById(R.id.closePopupBtn);
+                sendPopupBtn = (Button) geoObjView.findViewById(R.id.sendPopupBtn);
+
+                popupWindow = new PopupWindow(geoObjView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                popupWindow.showAtLocation(v, Gravity.CENTER, 0, 0);
+
+                //close the popup window on button click
+                closePopupBtn.setOnClickListener(v1 -> popupWindow.dismiss());
+
+                //send the cot
+                sendPopupBtn.setOnClickListener(v12 -> {
+                    Toast.makeText(getApplicationContext(), "Sending GeoObject CoT", Toast.LENGTH_SHORT).show();
+                    // the range to the target
+                    double range;
+                    if (droneLocationAlt < 1)
+                        range = 0.001 / Math.tan(Math.toRadians(gimbalPitch));
+                    else
+                        range = droneLocationAlt / Math.tan(Math.toRadians(gimbalPitch));
+
+                    // range to horizon, 3.28084ft per meter, 1.169 nautical mile, 1852.001 meters per nautical mile
+                    if (gimbalPitch == 0)
+                        range = 1.169 * Math.sqrt(droneLocationAlt * 3.28084) * 1852.001;
+
+                    range = Math.abs(range);
+                    Log.i(TAG, String.format("GeoObject Range: %f", range));
+
+                    double[] geoObjLatLng = moveLatLng(droneLocationLat, droneLocationLng, range, droneHeading);
+                    Log.i(TAG, String.format("Sending geoObject at lat: %f lng: %f", geoObjLatLng[0], geoObjLatLng[1]));
+
+                    // update the count for this name
+                    names.put(pickedName[0], howMany[0]+1);
+
+                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng[0], geoObjLatLng[1], pickedAttitude[0], String.format("%s-%d", pickedName[0], howMany[0]), droneHeading);
+                    popupWindow.dismiss();
+                });
+            }
+            return false;
+        });
 
         boolean controller_status = initFlightController();
         boolean gimbal_status = initGimbal();
@@ -473,48 +542,6 @@ public class CompleteWidgetActivity extends Activity {
                         Log.i(TAG, "No GPS, retrying...");
                     }
                 }, sensor_delay);
-
-                // send stream 1 stream CoT
-                stream_handler.postDelayed(stream_runnable = () -> {
-                    stream_handler.postDelayed(stream_runnable, stream_delay);
-                    Log.i(TAG,String.format("RTMP URL: %s", RTMP_URL));
-                    l = DJISDKManager.getInstance().getLiveStreamManager();
-                    if (!l.isStreaming()) {
-                        l.registerListener((x) -> {
-                            Log.d(TAG, "LiveStream callback:" + x);
-                        });
-
-                        //l.setLiveVideoResolution(new LiveVideoResolution(480, 360));
-                        //l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_480_360);
-                        //l.setLiveVideoBitRate(LiveVideoBitRateMode.AUTO.getValue());
-                        l.setAudioMuted(true);
-                        l.setVideoSource(LiveStreamManager.LiveStreamVideoSource.Primary);
-                        l.setVideoEncodingEnabled(true);
-                        l.setLiveUrl(RTMP_URL);
-
-                        int rc = 0;
-                        rc = l.startStream();
-                        if (rc != 0) {
-                            l.stopStream();
-                            l.unregisterListener((x) -> {
-                                Log.d(TAG, "LiveStream callback:" + x);
-                            });
-                            // 254 probably means the user put the wrong IP:Port in
-                            if (rc == 254) {
-                                Toast.makeText(getApplicationContext(), "ERROR: Check your RTMP configuration\nStopping stream attempts", Toast.LENGTH_LONG).show();
-                                // kill this thread, the IP:Port are bad
-                                stream_handler.removeCallbacks(stream_runnable);
-                            }
-                        } else {
-                            Toast.makeText(getApplicationContext(), "RTMP Stream Established Successfully", Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        Toast.makeText(getApplicationContext(), "UAS streaming is active\nSending 1 Stream CoT", Toast.LENGTH_SHORT).show();
-                        new SendCotTask(CompleteWidgetActivity.this).execute("start_stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
-                        // once the stream is up, stop sending the stream CoT
-                        stream_handler.removeCallbacks(stream_runnable);
-                    }
-                }, stream_delay);
             }
             else {
                 Toast.makeText(getApplicationContext(), "ERROR: Gimbal did not init correctly\nCheck UAS is powered on", Toast.LENGTH_LONG).show();
@@ -664,16 +691,19 @@ public class CompleteWidgetActivity extends Activity {
     protected void onPause() {
         // stop the sensor cot generation
         Log.i(TAG, "Stopping sensor thread");
-        Toast.makeText(getApplicationContext(), "Stopping UAS Location Updates", Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), "Stopping UAS Location Updates", Toast.LENGTH_SHORT).show();
         sensor_handler.removeCallbacks(sensor_runnable);
         // stop the stream
-        if (l.isStreaming()) {
+        if (l!=null && l.isStreaming()) {
             Log.i(TAG, "Stopping stream thread");
-            Toast.makeText(getApplicationContext(), "Stopping Stream", Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Stopping Stream", Toast.LENGTH_SHORT).show();
             l.stopStream();
             stream_handler.removeCallbacks(stream_runnable);
         }
 
+
+        //if (model != null)
+        //    model.close();
         mapWidget.onPause();
         super.onPause();
     }
@@ -682,13 +712,18 @@ public class CompleteWidgetActivity extends Activity {
     protected void onDestroy() {
         // stop the sensor cot generation
         Log.i(TAG, "Stopping sensor thread");
+        Toast.makeText(getApplicationContext(), "Stopping UAS Location Updates", Toast.LENGTH_SHORT).show();
         sensor_handler.removeCallbacks(sensor_runnable);
         // stop the stream
-        if (l.isStreaming()) {
+        if (l!=null && l.isStreaming()) {
             Log.i(TAG, "Stopping stream thread");
+            Toast.makeText(getApplicationContext(), "Stopping Stream", Toast.LENGTH_SHORT).show();
             l.stopStream();
             stream_handler.removeCallbacks(stream_runnable);
         }
+
+        //if (model != null)
+        //    model.close();
         mapWidget.onDestroy();
         super.onDestroy();
     }

@@ -33,15 +33,15 @@
 
         <meta-data
             android:name="com.dji.sdk.API_KEY"
-            android:value="0a80e3b3467e19580f0e35df" />
+            android:value="${djiKey}" />
 
         <!-- Here Maps -->
         <meta-data android:name="com.here.android.maps.appid"
-                   android:value="5tnh4WvKhtd7XzvxIjxH"/>
+                   android:value="${hereKey}"/>
         <meta-data android:name="com.here.android.maps.apptoken"
-                   android:value="9Sru-tszIDUrpGxTBALQgA"/>
+                   android:value="${hereToken}"/>
         <meta-data android:name="com.here.android.maps.license.key"
-                   android:value="fVsy0S0BMX9xPxG3rLVNEfuVdqhW12IXjDugnGSeJS8qVQzdZF3/AHolDi0dHnr/qhwtBTbvwX15EEvuvAKnhJCrFMANh6WTYQgqZyTUvXHn+K8+bZmhC6FRtB7tNVv3049T8xYlJLxSvzhI25xSGXqrLWf7lmYAlbYD3UMr1HKMUMiGlx6LbOXq+iN6cKOdfn6haNtq9nOcYow8GJKsSo+BwEstb2oVosA9/l8xcB1sbMXrPEVWTHvXfItwqG+5cIsz3VE26pInNDBk8KVnHsA3EMJ04Mqy7OHMxzKSWmHSE9c6i4hMSBimWN5k//qKbEP02Iie7Ny4RLD2OGEWoqrVMKb923eDh//rdKclg/t+ZypkYDo4F1rA0hSHpq2oDNIFl1IGCLtSMOBymM6cRwaQ/63HuRwPsm3RFyf31uE6+7pQb37MQsc5tTqrPfM5T1y1p8YtWnL5dXRjwTVRiRI+bLB4eswbuUb6oycK1uHDcJWz7YtZSGI+vRaHTLB9vK1HuHLbZVWTWxsd19fwe8vaOwJZXQdF8G3VdwkshiYho4r7GtIvE1Y3ZlWCKNvJClXSEK5wKOH5kD+GsV9jNuWp/U7qyUHenU00s0vU8qMK6Zd116H57tetGXUWlQ8zzgt/c8LL9RV2eQ4Y2XW+WguMxr1DKbnLs4b7hSRxQwU="/>
+                   android:value="${hereLic}"/>
 
         <service
             android:name="com.here.android.mpa.service.MapService"

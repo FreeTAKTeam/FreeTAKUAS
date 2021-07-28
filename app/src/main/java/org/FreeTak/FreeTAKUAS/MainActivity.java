@@ -1,6 +1,8 @@
 package org.FreeTak.FreeTAKUAS;
 
 import org.FreeTak.FreeTAKUAS.R;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.Manifest;
 import android.app.Activity;
@@ -23,6 +25,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -36,6 +40,15 @@ import androidx.core.content.ContextCompat;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,12 +71,15 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final String LAST_USED_FTS_API = "ftsapikey";
     private static final String LAST_USED_DRONE_NAME = "drone_name";
     private static final String LAST_USED_RTMP_IP = "rtmp_ip";
+    private static final String LAST_USED_RTMP_HD = "rtmp_hd";
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static boolean isAppStarted = false;
     public int ready = 0;
 
     private final Handler button_handler = new Handler();
+    private final Handler server_handler = new Handler();
     private Runnable button_runnable;
+    private Runnable server_runnable;
 
     private DJISDKManager.SDKManagerCallback registrationCallback = new DJISDKManager.SDKManagerCallback() {
 
@@ -84,19 +100,19 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         @Override
         public void onProductDisconnect() {
             Toast.makeText(getApplicationContext(),
-                           "UAS and Controller disconnect!",
-                           Toast.LENGTH_LONG).show();
+                    "UAS and Controller disconnect!",
+                    Toast.LENGTH_LONG).show();
             ready = ready ^ 16;
         }
 
         @Override
         public void onProductConnect(BaseProduct product) {
             Toast.makeText(getApplicationContext(),
-                           "UAS and Controller connected!",
-                           Toast.LENGTH_SHORT).show();
+                    "UAS and Controller connected!",
+                    Toast.LENGTH_SHORT).show();
             ready = ready | 16;
         }
-        
+
         @Override
         public void onProductChanged(BaseProduct product) {
 
@@ -147,23 +163,25 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         return isAppStarted;
     }
     private static final String[] REQUIRED_PERMISSION_LIST = new String[] {
-        Manifest.permission.VIBRATE, // Gimbal rotation
-        Manifest.permission.INTERNET, // API requests
-        Manifest.permission.ACCESS_WIFI_STATE, // WIFI connected products
-        Manifest.permission.ACCESS_COARSE_LOCATION, // Maps
-        Manifest.permission.ACCESS_NETWORK_STATE, // WIFI connected products
-        Manifest.permission.ACCESS_FINE_LOCATION, // Maps
-        Manifest.permission.CHANGE_WIFI_STATE, // Changing between WIFI and USB connection
-        Manifest.permission.WRITE_EXTERNAL_STORAGE, // Log files
-        Manifest.permission.BLUETOOTH, // Bluetooth connected products
-        Manifest.permission.BLUETOOTH_ADMIN, // Bluetooth connected products
-        Manifest.permission.READ_EXTERNAL_STORAGE, // Log files
-        Manifest.permission.READ_PHONE_STATE, // Device UUID accessed upon registration
-        Manifest.permission.RECORD_AUDIO // Speaker accessory
+            Manifest.permission.VIBRATE, // Gimbal rotation
+            Manifest.permission.INTERNET, // API requests
+            Manifest.permission.ACCESS_WIFI_STATE, // WIFI connected products
+            Manifest.permission.ACCESS_COARSE_LOCATION, // Maps
+            Manifest.permission.ACCESS_NETWORK_STATE, // WIFI connected products
+            Manifest.permission.ACCESS_FINE_LOCATION, // Maps
+            Manifest.permission.CHANGE_WIFI_STATE, // Changing between WIFI and USB connection
+            Manifest.permission.WRITE_EXTERNAL_STORAGE, // Log files
+            Manifest.permission.BLUETOOTH, // Bluetooth connected products
+            Manifest.permission.BLUETOOTH_ADMIN, // Bluetooth connected products
+            Manifest.permission.READ_EXTERNAL_STORAGE, // Log files
+            Manifest.permission.READ_PHONE_STATE, // Device UUID accessed upon registration
+            Manifest.permission.RECORD_AUDIO // Speaker accessory
     };
     private static final int REQUEST_PERMISSION_CODE = 12345;
     private List<String> missingPermission = new ArrayList<>();
     private EditText FtsIpEditText, FtsApiEditText, DroneNameEditText, RtmpIpEditText;
+    private CheckBox RtmpHDEnable;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -172,13 +190,27 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         isAppStarted = true;
         findViewById(R.id.complete_ui_widgets).setOnClickListener(this);
         ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_disabled);
-        findViewById(R.id.bt_customized_ui_widgets).setOnClickListener(this);
-        findViewById(R.id.bt_map_widget).setOnClickListener(this);
+        //findViewById(R.id.bt_customized_ui_widgets).setOnClickListener(this);
+        //findViewById(R.id.bt_map_widget).setOnClickListener(this);
         TextView versionText = (TextView) findViewById(R.id.app_version);
         versionText.setText(R.string.app_version);
+
+        RtmpHDEnable = (CheckBox) findViewById(R.id.hd_stream);
+        RtmpHDEnable.setChecked(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(LAST_USED_RTMP_HD, false));
+        RtmpHDEnable.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_RTMP_HD, true).apply();
+                } else {
+                    PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_RTMP_HD, false).apply();
+                }
+            }
+        });
+
         FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
-        //FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, "172.30.254.237:19023"));
-        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
+        FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, "204.48.30.216:19023"));
+        //FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
         FtsIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -219,8 +251,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         FtsApiEditText = (EditText) findViewById(R.id.edittext_fts_apikey);
-        //FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, "apikey123"));
-        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, ""));
+        FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, "token"));
+        //FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, ""));
         FtsApiEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -261,8 +293,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         RtmpIpEditText = (EditText) findViewById(R.id.edittext_rtmp_ip);
-        //RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, "172.30.254.237:1935"));
-        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, ""));
+        RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, "64.227.70.49:1935"));
+        //RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, ""));
         RtmpIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -303,8 +335,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
         DroneNameEditText = (EditText) findViewById(R.id.edittext_drone_name);
-        //DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, "djcombo"));
-        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, ""));
+        DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, "djcombo"));
+        //DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, ""));
         DroneNameEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -354,11 +386,25 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             button_handler.postDelayed(button_runnable, 500);
             enable_controller_button();
         }, 500);
+
+        server_handler.postDelayed(server_runnable = () -> {
+            server_handler.postDelayed(server_runnable, 500);
+            Thread apicheck = new Thread(() -> server_version_supported());
+            if (!apicheck.isAlive() && ((ready & 3) == 3)) // make sure ftsIp and ftsApikey are set
+                try {
+                    apicheck.start();
+                } catch(IllegalThreadStateException e) {
+                    Log.i(TAG, String.format("Thread error: %s",e));
+                }
+            apicheck = null;
+        }, 500);
+
     }
 
     @Override
     protected void onDestroy() {
         button_handler.removeCallbacks(button_runnable);
+        server_handler.removeCallbacks(server_runnable);
         DJISDKManager.getInstance().destroy();
         ready = 0;
         isAppStarted = false;
@@ -381,8 +427,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             startSDKRegistration();
         } else {
             ActivityCompat.requestPermissions(this,
-                                              missingPermission.toArray(new String[missingPermission.size()]),
-                                              REQUEST_PERMISSION_CODE);
+                    missingPermission.toArray(new String[missingPermission.size()]),
+                    REQUEST_PERMISSION_CODE);
         }
     }
 
@@ -423,18 +469,28 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
 
     @Override
     public void onClick(View view) {
-        Class nextActivityClass;
+        Class nextActivityClass = null;
 
         int id = view.getId();
         if (id == R.id.complete_ui_widgets) {
             nextActivityClass = CompleteWidgetActivity.class;
+
             if (!enable_controller_button()) {
-                Toast.makeText(getApplicationContext(), "No controller detected and/or configuration is missing!", Toast.LENGTH_SHORT).show();
-                return;
+                if ((ready & 32) == 0 && (ready & 3) == 3) {
+                    Toast.makeText(getApplicationContext(), "Your configured FTS does not appear to support the UAS client", Toast.LENGTH_SHORT).show();
+                    return;
+                } else if (ready < 0x20) {
+                    Toast.makeText(getApplicationContext(), "No controller detected and/or configuration is missing!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
             }
+
+            server_handler.removeCallbacks(server_runnable);
+            button_handler.removeCallbacks(button_runnable);
             Intent intent = new Intent(this, nextActivityClass);
             startActivity(intent);
         }
+        /*
         else if (id == R.id.bt_customized_ui_widgets) {
             nextActivityClass = CustomizedWidgetsActivity.class;
         } else {
@@ -449,6 +505,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             popup.show();
             return;
         }
+        */
         Intent intent = new Intent(this, nextActivityClass);
         startActivity(intent);
 
@@ -499,16 +556,72 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         return resultCode == ConnectionResult.SUCCESS;
     }
 
+    public void server_version_supported() {
+
+        String apiversion;
+        String ftsip = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsip","");
+        String ftsapikey = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsapikey","");
+
+        if (ftsip.isEmpty() || ftsapikey.isEmpty())
+            return;
+
+        try {
+            URL url = new URL("http://" + ftsip + "/manageAPI/getHelp");
+            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setDoInput(true);
+            urlConnection.setRequestMethod("GET");
+            urlConnection.setRequestProperty("Content-Type", "application/json");
+            urlConnection.setRequestProperty("Authorization", ftsapikey);
+
+            InputStream inputStream;
+            // get stream
+            if (urlConnection.getResponseCode() < HttpURLConnection.HTTP_BAD_REQUEST) {
+                inputStream = urlConnection.getInputStream();
+            } else {
+                inputStream = urlConnection.getErrorStream();
+            }
+            // parse stream
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            String temp, response = "";
+            while ((temp = bufferedReader.readLine()) != null) {
+                response += temp;
+            }
+            // put into JSONObject
+            JSONObject ResponseObject = new JSONObject();
+            ResponseObject.put("Content", response);
+            ResponseObject.put("Code", urlConnection.getResponseCode());
+            ResponseObject.put("Message", urlConnection.getResponseMessage());
+            ResponseObject.put("Length", urlConnection.getContentLength());
+            ResponseObject.put("Type", urlConnection.getContentType());
+            urlConnection.disconnect();
+
+            try {
+                JSONObject content = new JSONObject(ResponseObject.get("Content").toString());
+                 apiversion = content.get("APIVersion").toString();
+                if (Float.parseFloat(apiversion) < 1.9f) {
+                    Log.i(TAG, String.format("FTS version %s does not support FreeTakUAS",apiversion));
+                    return;
+                }
+            } catch (JSONException e) {
+                Log.i(TAG, "Didn't receive JSON from the server");
+                return;
+            }
+        } catch (Exception e) {
+            Log.i(TAG, String.format("Problem validating the FTS api version: %s", e.toString()));
+            return;
+        }
+        Log.i(TAG, String.format("FTS version %s API check success",apiversion));
+        ready = ready | 32;
+    }
+
     private boolean enable_controller_button() {
-        Log.i(TAG, String.format("Ready? %d",ready));
-        if (ready == 0x1f) {
-            Log.i(TAG, "YES READY");
+
+        if (ready == 0x3f) {
             ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_enabled);
             findViewById(R.id.complete_ui_widgets).setEnabled(true);
             button_handler.removeCallbacks(button_runnable);
             return true;
         }
-        Log.i(TAG, "NOT READY");
         ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_disabled);
         return false;
     }

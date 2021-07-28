@@ -260,6 +260,14 @@
         android:layout_above="@+id/dashboard_widget"
         android:orientation="vertical">
 
+        <ToggleButton
+            android:id="@+id/stream_toggle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            style="@style/toggleButton"
+            android:background="@drawable/ic_toggle_bg"
+            android:layout_marginBottom="5dp" />
+
         <dji.ux.widget.TakeOffWidget
             android:layout_width="40dp"
             android:layout_height="40dp"

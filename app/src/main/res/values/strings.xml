@@ -1,12 +1,13 @@
 <resources>
     <string name="app_name">FreeTAK UAS</string>
-    <string name="app_version">FreeTAK UAS version 1.4</string>
+    <string name="app_version">FreeTAK UAS version 1.4.6</string>
     <string name="uas_button_disabled">UAS [NOT READY]</string>
     <string name="uas_button_enabled">UAS [READY]</string>
     <string name="select_all">Select All</string>
     <string name="select_none">Select None</string>
     <string name="search">Search</string>
     <string name="run">Run</string>
+    <string name="rtmp_hd">High Def Streaming</string>
     <string name="camera_name_primary">Primary Camera Name</string>
     <string name="camera_name_secondary">Secondary Camera Name</string>
     <string name="camera_side_primary">Primary Camera Side</string>
@@ -69,5 +70,5 @@
         <item>Fly Zone Border</item>
     </string-array>
 
-    <string name="mapbox_id">Please enter the map box key here.</string>
+    <string name="mapbox_id">${MAPBOX_ACCESS_TOKEN}</string>
 </resources>
