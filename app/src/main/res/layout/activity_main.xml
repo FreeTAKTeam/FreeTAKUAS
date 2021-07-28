@@ -60,7 +60,7 @@
                 android:layout_column="0"
                 android:layout_margin="10dp"
                 android:background="@color/gray"
-                android:digits="0123456789.:"
+
                 android:gravity="center"
                 android:hint="@string/fts_ip"
                 android:imeOptions="actionDone"
@@ -78,7 +78,7 @@
                 android:layout_column="0"
                 android:layout_margin="10dp"
                 android:background="@color/gray"
-                android:digits="0123456789.:"
+
                 android:gravity="center"
                 android:hint="@string/rtmp_ip"
                 android:imeOptions="actionDone"
