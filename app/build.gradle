@@ -20,6 +20,7 @@ def ftsAPIKey = properties.getProperty('FTSAPIKEY')
 def rtmpIP = properties.getProperty('RTMPIP')
 def droneName = properties.getProperty('DRONENAME')
 
+
 android {
     compileSdkVersion 30
     buildToolsVersion '30.0.2'
@@ -32,6 +33,7 @@ android {
         buildConfigField "String", "FTSAPIKEY", ftsAPIKey
         buildConfigField "String", "RTMPIP", rtmpIP
         buildConfigField "String", "DRONENAME", droneName
+        buildConfigField "boolean", "RELEASE", "false"
         minSdkVersion 23
         targetSdkVersion 30
         multiDexEnabled true
