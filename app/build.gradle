@@ -12,30 +12,41 @@ def hereKey = properties.getProperty('HERE_KEY_APPID')
 def hereToken = properties.getProperty('HERE_KEY_APPTOKEN')
 def hereLic = properties.getProperty('HERE_KEY_LICENSE')
 def keystorePW = properties.getProperty('KEYSTORE_PASSWD')
+def keystorePath = properties.getProperty('KEYSTORE_PATH')
+def keystoreAlias = properties.getProperty('KEYSTORE_ALIAS')
+def mapboxKey = properties.getProperty('MAPBOX_DOWNLOADS_TOKEN')
+def ftsIP = properties.getProperty('FTSIP')
+def ftsAPIKey = properties.getProperty('FTSAPIKEY')
+def rtmpIP = properties.getProperty('RTMPIP')
+def droneName = properties.getProperty('DRONENAME')
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion '29.0.3'
+    compileSdkVersion 30
+    buildToolsVersion '30.0.2'
     defaultConfig {
         applicationId "org.FreeTak.FreeTAKUAS"
         versionCode 1
         versionName "1.4.6"
         manifestPlaceholders = [djiKey: djiKey, hereKey: hereKey, hereToken: hereToken, hereLic: hereLic]
+        buildConfigField "String", "FTSIP", ftsIP
+        buildConfigField "String", "FTSAPIKEY", ftsAPIKey
+        buildConfigField "String", "RTMPIP", rtmpIP
+        buildConfigField "String", "DRONENAME", droneName
         minSdkVersion 23
-        targetSdkVersion 29
+        targetSdkVersion 30
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
         ndk {
             // On x86 devices that run Android API 23 or above, if the application is targeted with API 23 or
             // above, FFmpeg lib might lead to runtime crashes or warnings.
-            abiFilters 'arm64-v8a' //'armeabi-v7a', 'x86',
+            abiFilters 'arm64-v8a' //, 'armeabi-v7a' //,'x86'
         }
     }
     signingConfigs {
         release {
-            storeFile file("../fts_2.jks")
+            storeFile file(keystorePath)
             storePassword keystorePW
-            keyAlias "key0"
+            keyAlias keystoreAlias
             keyPassword keystorePW
         }
     }
@@ -104,6 +115,7 @@ dependencies {
          * Note that Google Play Store does not allow APKs that include this library.
          */
         exclude group: 'com.amap.api'
+        exclude group: 'com.mapbox.mapboxsdk'
     })
     implementation ('com.dji:dji-sdk:4.15', {
         /**
@@ -117,13 +129,13 @@ dependencies {
     })
     compileOnly ('com.dji:dji-sdk-provided:4.15')
 
-    implementation 'org.greenrobot:eventbus:3.2.0'
+    implementation 'org.greenrobot:eventbus:3.0.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation 'androidx.appcompat:appcompat:1.3.0'
-    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'androidx.annotation:annotation:1.2.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-    implementation 'androidx.core:core:1.6.0'
+    implementation 'androidx.core:core:1.3.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     //HERE maps

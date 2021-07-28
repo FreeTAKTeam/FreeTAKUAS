@@ -47,11 +47,11 @@ import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
-/*
+
 import com.here.android.mpa.common.GeoCoordinate;
 import com.here.android.mpa.mapping.Map;
 import com.here.android.mpa.mapping.MapOverlay;
-*/
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,7 +61,7 @@ import java.util.Random;
 import dji.common.flightcontroller.flyzone.FlyZoneCategory;
 import dji.ux.widget.MapWidget;
 
-//import static com.here.android.mpa.common.MapSettings.setIsolatedDiskCacheRootPath;
+import static com.here.android.mpa.common.MapSettings.setIsolatedDiskCacheRootPath;
 
 public class MapWidgetActivity extends Activity implements CompoundButton.OnCheckedChangeListener,
     RadioGroup.OnCheckedChangeListener,
@@ -148,14 +148,13 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
         mapProvider = intent.getIntExtra(MAP_PROVIDER, 0);
         switch (mapProvider) {
             case 0:
-/*
                 boolean success = setIsolatedDiskCacheRootPath(
                         getExternalFilesDir(null) + File.separator + ".here-maps-cache");
                 if (success) {
                     mapWidget.initHereMap(onMapReadyListener);
                 }
-*/
                 break;
+                /*
             case 1:
                 mapWidget.initGoogleMap(onMapReadyListener);
                 break;
@@ -167,6 +166,7 @@ public class MapWidgetActivity extends Activity implements CompoundButton.OnChec
                 //TODO: Remove this key before putting on github
                 mapWidget.initMapboxMap(onMapReadyListener, getResources().getString(R.string.mapbox_id));
                 break;
+                 */
         }
         mapWidget.onCreate(savedInstanceState);
 
