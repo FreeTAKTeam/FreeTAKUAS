@@ -22,7 +22,7 @@ def droneName = properties.getProperty('DRONENAME')
 
 def versionMajor = 1
 def versionMinor = 4
-def versionPatch = 6
+def versionPatch = 7
 
 android {
     compileSdkVersion 30

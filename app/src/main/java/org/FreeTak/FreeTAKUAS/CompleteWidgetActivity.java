@@ -214,11 +214,6 @@ public class CompleteWidgetActivity extends Activity {
         secondaryFPVWidget = findViewById(R.id.secondary_fpv_widget);
         secondaryFPVWidget.setOnClickListener(view -> swapVideoSource());
 
-        tracker = new MultiBoxTracker(this);
-        trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
-        trackingOverlay.addCallback(
-                canvas -> tracker.draw(canvas));
-
         if (VideoFeeder.getInstance() != null) {
             //If secondary video feed is already initialized, get video source
             updateSecondaryVideoVisibility(VideoFeeder.getInstance().getSecondaryVideoFeed().getVideoSource() != PhysicalSource.UNKNOWN);
@@ -229,6 +224,11 @@ public class CompleteWidgetActivity extends Activity {
 
             if (object_detect) {
                 try {
+                    tracker = new MultiBoxTracker(this);
+                    trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
+                    trackingOverlay.addCallback(
+                            canvas -> tracker.draw(canvas));
+
                     AssetManager am = this.getApplicationContext().getAssets();
                     //InputStream model = am.open("lite-model_object_detection_mobile_object_localizer_v1_1_metadata_2.tflite");
                     InputStream model = am.open("lite-model_ssd_mobilenet_v1_1_metadata_2.tflite");
@@ -244,10 +244,8 @@ public class CompleteWidgetActivity extends Activity {
                     allowedLabels.add("boat");
                     allowedLabels.add("person");
 
-                    ObjectDetector.ObjectDetectorOptions options = ObjectDetector.ObjectDetectorOptions.builder().setNumThreads(4).setLabelAllowList(allowedLabels).setScoreThreshold(0.5f).build();
-
+                    ObjectDetector.ObjectDetectorOptions options = ObjectDetector.ObjectDetectorOptions.builder().setNumThreads(6).setLabelAllowList(allowedLabels).setScoreThreshold(0.5f).build();
                     objectDetector = ObjectDetector.createFromBufferAndOptions(modelBytes, options);
-
                 } catch (Exception e) {
                     Log.i(TAG, String.format("Failed to load TFLite model: %s", e));
                 }
@@ -488,12 +486,12 @@ public class CompleteWidgetActivity extends Activity {
         });
 
         if (object_detect) {
-            AtomicBoolean processingFrame = new AtomicBoolean(false);
+            //AtomicBoolean processingFrame = new AtomicBoolean(false);
             VideoFeeder.getInstance().getSecondaryVideoFeed().addVideoDataListener((videoBuffer, size) -> {
                 try {
-                    if (processingFrame.get())
-                        return;
-                    processingFrame.set(true);
+                    //if (processingFrame.get())
+                    //    return;
+                    //processingFrame.set(true);
 
                     Bitmap bitmap = fpvWidget.getBitmap();
                     if (bitmap == null)
@@ -519,10 +517,10 @@ public class CompleteWidgetActivity extends Activity {
                     tracker.trackResults(mappedRecognitions, ++timestamp);
                     trackingOverlay.postInvalidate();
 
-                    processingFrame.set(false);
+                    //processingFrame.set(false);
                 } catch (Exception e) {
                     Log.i(TAG, String.format("Something bad happened doing TFLite: %s", e));
-                    processingFrame.set(false);
+                    //processingFrame.set(false);
                 }
             });
         }

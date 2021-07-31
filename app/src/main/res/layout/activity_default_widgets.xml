@@ -8,6 +8,7 @@
     android:id="@+id/root_view"
     tools:context=".MainActivity">
 
+
     <!-- Widget to see first person view (FPV) -->
     <RelativeLayout
         android:id="@+id/fpv_container"
@@ -28,16 +29,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="40dp"
+
         android:layout_toRightOf="@+id/TakeOffReturnPanel"
         android:layout_toLeftOf="@+id/CameraCapturePanel"
         android:layout_below="@+id/camera"
         tools:ignore="RtlHardcoded">
-
         <org.FreeTak.FreeTAKUAS.customview.AutoFitTextureView
             android:id="@+id/texture"
             android:layout_width="wrap_content"
@@ -56,7 +55,6 @@
             android:layout_centerVertical="true"
             android:src="@drawable/crosshair"
             android:contentDescription="Crosshair overlay for geoObjects" />
-
         <dji.ux.widget.RadarWidget
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -80,6 +78,7 @@
             android:layout_height="match_parent"
             custom:sourceCameraNameVisibility="false"
             custom:videoSource="secondary"/>
+
     </FrameLayout>
 
     <dji.ux.workflow.CompassCalibratingWorkFlow

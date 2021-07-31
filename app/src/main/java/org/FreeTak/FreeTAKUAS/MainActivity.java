@@ -93,9 +93,9 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 //loginAccount();
                 DJISDKManager.getInstance().startConnectionToProduct();
                 Toast.makeText(getApplicationContext(), "SDK registration succeeded!", Toast.LENGTH_SHORT).show();
-                //if (!BuildConfig.RELEASE) {
-                //    DJISDKManager.getInstance().enableBridgeModeWithBridgeAppIP("172.30.254.213");
-                //}
+                if (!BuildConfig.RELEASE) {
+                    //DJISDKManager.getInstance().enableBridgeModeWithBridgeAppIP("172.30.254.213");
+                }
             } else {
 
                 Toast.makeText(getApplicationContext(),
@@ -416,7 +416,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
 
         server_handler.postDelayed(server_runnable = () -> {
             server_handler.postDelayed(server_runnable, 500);
-            if ((ready & 32) == 32) {
+            if ((ready & 16) == 16) {
                 server_handler.removeCallbacks(server_runnable);
                 return;
             }
