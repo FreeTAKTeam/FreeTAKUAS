@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">FreeTAK UAS</string>
-    <string name="app_version">FreeTAK UAS version 1.4.6</string>
     <string name="uas_button_disabled">UAS [NOT READY]</string>
     <string name="uas_button_enabled">UAS [READY]</string>
     <string name="select_all">Select All</string>
@@ -71,4 +70,5 @@
     </string-array>
 
     <string name="mapbox_id">${MAPBOX_DOWNLOADS_TOKEN}</string>
+    <string name="enable_object_detection">Enable Object Detection</string>
 </resources>

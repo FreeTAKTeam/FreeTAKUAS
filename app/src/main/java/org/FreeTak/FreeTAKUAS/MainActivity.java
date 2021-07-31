@@ -74,6 +74,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final String LAST_USED_DRONE_NAME = "drone_name";
     private static final String LAST_USED_RTMP_IP = "rtmp_ip";
     private static final String LAST_USED_RTMP_HD = "rtmp_hd";
+    private static final String LAST_USED_OD_HD = "object_detect";
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static boolean isAppStarted = false;
     public int ready = 0;
@@ -92,6 +93,9 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 //loginAccount();
                 DJISDKManager.getInstance().startConnectionToProduct();
                 Toast.makeText(getApplicationContext(), "SDK registration succeeded!", Toast.LENGTH_SHORT).show();
+                //if (!BuildConfig.RELEASE) {
+                //    DJISDKManager.getInstance().enableBridgeModeWithBridgeAppIP("172.30.254.213");
+                //}
             } else {
 
                 Toast.makeText(getApplicationContext(),
@@ -182,7 +186,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final int REQUEST_PERMISSION_CODE = 12345;
     private List<String> missingPermission = new ArrayList<>();
     private EditText FtsIpEditText, FtsApiEditText, DroneNameEditText, RtmpIpEditText;
-    private CheckBox RtmpHDEnable;
+    private CheckBox RtmpHDEnable, ObjectDetectionEnable;
 
 
     @Override
@@ -195,7 +199,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         //findViewById(R.id.bt_customized_ui_widgets).setOnClickListener(this);
         //findViewById(R.id.bt_map_widget).setOnClickListener(this);
         TextView versionText = (TextView) findViewById(R.id.app_version);
-        versionText.setText(R.string.app_version);
+        versionText.setText(String.format("FreeTakUAS Version: %s",BuildConfig.VERSION_NAME));
 
         RtmpHDEnable = (CheckBox) findViewById(R.id.hd_stream);
         RtmpHDEnable.setChecked(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(LAST_USED_RTMP_HD, false));
@@ -206,6 +210,19 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                     PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_RTMP_HD, true).apply();
                 } else {
                     PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_RTMP_HD, false).apply();
+                }
+            }
+        });
+
+        ObjectDetectionEnable = (CheckBox) findViewById(R.id.object_detector);
+        ObjectDetectionEnable.setChecked(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(LAST_USED_OD_HD, false));
+        ObjectDetectionEnable.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_OD_HD, true).apply();
+                } else {
+                    PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_OD_HD, false).apply();
                 }
             }
         });

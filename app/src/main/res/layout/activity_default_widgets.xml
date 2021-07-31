@@ -28,6 +28,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -37,6 +38,15 @@
         android:layout_below="@+id/camera"
         tools:ignore="RtlHardcoded">
 
+        <org.FreeTak.FreeTAKUAS.customview.AutoFitTextureView
+            android:id="@+id/texture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <org.FreeTak.FreeTAKUAS.customview.OverlayView
+            android:id="@+id/tracking_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
         <ImageView
             android:id="@+id/crosshair"
@@ -63,6 +73,7 @@
         android:layout_alignParentLeft="true"
         android:layout_above="@+id/TakeOffReturnPanel"
         android:background="@color/black">
+
         <dji.ux.widget.FPVWidget
             android:id="@+id/secondary_fpv_widget"
             android:layout_width="match_parent"
@@ -87,84 +98,85 @@
         android:background="@color/transparent"
         android:layout_height="20dp"/>
 
-    <LinearLayout
-        android:id="@+id/camera"
-        android:layout_alignParentRight="true"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/signal"
-        android:layout_marginTop="15dp"
-        android:background="@color/dark_gray"
-        android:orientation="horizontal">
     <!--
-        <dji.ux.widget.config.CameraConfigISOAndEIWidget
-            android:layout_width="50dp"
-            android:layout_height="25dp"/>
-
-        <dji.ux.widget.config.CameraConfigShutterWidget
-            android:layout_width="50dp"
-            android:layout_height="25dp"/>
-
-        <dji.ux.widget.config.CameraConfigApertureWidget
-            android:layout_width="50dp"
-            android:layout_height="25dp"/>
-
-        <dji.ux.widget.config.CameraConfigEVWidget
-            android:layout_width="50dp"
-            android:layout_height="25dp"/>
-
-        <dji.ux.widget.config.CameraConfigWBWidget
-            android:layout_width="60dp"
-            android:layout_height="25dp"/>
-
-        <dji.ux.widget.config.CameraConfigStorageWidget
-            android:layout_width="108dp"
-            android:layout_height="25dp"/>
-        <dji.ux.widget.config.CameraConfigSSDWidget
-            android:layout_width="125dp"
-            android:layout_height="25dp"/>
-    -->
-    </LinearLayout>
-
     <LinearLayout
-        android:id="@+id/camera2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
+            android:id="@+id/camera"
+            android:layout_alignParentRight="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/signal"
+            android:layout_marginTop="15dp"
+            android:background="@color/dark_gray"
+            android:orientation="horizontal">
 
-        android:layout_toLeftOf="@+id/CameraCapturePanel"
-        android:background="@color/dark_gray"
-        android:orientation="horizontal">
-        <dji.ux.widget.SpeakerWidget
-            android:layout_width="35dp"
-            android:layout_height="35dp"/>
-        <dji.ux.widget.AutoExposureLockWidget
-            android:layout_width="35dp"
-            android:layout_height="35dp"/>
-        <dji.ux.widget.FocusModeWidget
-            android:layout_width="35dp"
-            android:layout_height="35dp"/>
-        <dji.ux.widget.FocusExposureSwitchWidget
-            android:layout_width="35dp"
-            android:layout_height="35dp"/>
-        <dji.ux.widget.BeaconWidget
-            android:layout_width="35dp"
-            android:layout_height="35dp"/>
-        <dji.ux.widget.SpotlightWidget
-            android:layout_width="35dp"
-            android:layout_height="35dp"/>
-        <dji.ux.widget.AccessLockerWidget
-            android:layout_width="35dp"
-            android:layout_height="35dp"/>
-    </LinearLayout>
-    <dji.ux.widget.ManualFocusWidget
-        android:layout_alignTop="@+id/camera2"
-        android:layout_toLeftOf="@+id/camera2"
+            <dji.ux.widget.config.CameraConfigISOAndEIWidget
+                android:layout_width="50dp"
+                android:layout_height="25dp"/>
 
-        android:layout_width="50dp"
-        android:layout_height="210dp"
-        tools:ignore="RtlHardcoded"/>
+            <dji.ux.widget.config.CameraConfigShutterWidget
+                android:layout_width="50dp"
+                android:layout_height="25dp"/>
 
+            <dji.ux.widget.config.CameraConfigApertureWidget
+                android:layout_width="50dp"
+                android:layout_height="25dp"/>
+
+            <dji.ux.widget.config.CameraConfigEVWidget
+                android:layout_width="50dp"
+                android:layout_height="25dp"/>
+
+            <dji.ux.widget.config.CameraConfigWBWidget
+                android:layout_width="60dp"
+                android:layout_height="25dp"/>
+
+            <dji.ux.widget.config.CameraConfigStorageWidget
+                android:layout_width="108dp"
+                android:layout_height="25dp"/>
+            <dji.ux.widget.config.CameraConfigSSDWidget
+                android:layout_width="125dp"
+                android:layout_height="25dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/camera2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+
+            android:layout_toLeftOf="@+id/CameraCapturePanel"
+            android:background="@color/dark_gray"
+            android:orientation="horizontal">
+            <dji.ux.widget.SpeakerWidget
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
+            <dji.ux.widget.AutoExposureLockWidget
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
+            <dji.ux.widget.FocusModeWidget
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
+            <dji.ux.widget.FocusExposureSwitchWidget
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
+            <dji.ux.widget.BeaconWidget
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
+            <dji.ux.widget.SpotlightWidget
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
+            <dji.ux.widget.AccessLockerWidget
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
+        </LinearLayout>
+
+        <dji.ux.widget.ManualFocusWidget
+            android:layout_alignTop="@+id/camera2"
+            android:layout_toLeftOf="@+id/camera2"
+
+            android:layout_width="50dp"
+            android:layout_height="210dp"
+            tools:ignore="RtlHardcoded"/>
+        -->
         <dji.ux.widget.MapWidget
             android:id="@+id/map_widget"
             android:layout_width="150dp"
