@@ -240,7 +240,6 @@ public class CompleteWidgetActivity extends Activity {
                     modelBytes.put((byte) model.read());
                 }
                 model.close();
-                am.close();
 
                 List<String> allowedLabels = new ArrayList<>();
                 allowedLabels.add("car");

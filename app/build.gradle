@@ -22,7 +22,7 @@ def droneName = properties.getProperty('DRONENAME')
 
 def versionMajor = 1
 def versionMinor = 4
-def versionPatch = 7
+def versionPatch = 8
 
 android {
     compileSdkVersion 30
@@ -38,7 +38,7 @@ android {
         buildConfigField "String", "FTSAPIKEY", ftsAPIKey
         buildConfigField "String", "RTMPIP", rtmpIP
         buildConfigField "String", "DRONENAME", droneName
-        buildConfigField "boolean", "RELEASE", "false" // true when making Play Store APK
+        buildConfigField "boolean", "RELEASE", "true" // true when making Play Store APK
         minSdkVersion 23
         targetSdkVersion 30
         multiDexEnabled true
