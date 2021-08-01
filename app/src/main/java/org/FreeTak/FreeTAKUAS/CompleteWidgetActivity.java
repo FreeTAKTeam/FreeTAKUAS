@@ -128,6 +128,8 @@ public class CompleteWidgetActivity extends Activity {
     private Dictionary names = new Hashtable();
 
     // ML stuff
+    private final Handler objectDetector_handler = new Handler();
+    private Runnable objectDetector_runnable;
     private ObjectDetector objectDetector = null;
     private OverlayView trackingOverlay = null;
     private MultiBoxTracker tracker;
@@ -221,36 +223,39 @@ public class CompleteWidgetActivity extends Activity {
             VideoFeeder.getInstance().getSecondaryVideoFeed()
                     .addVideoActiveStatusListener(isActive ->
                             runOnUiThread(() -> updateSecondaryVideoVisibility(isActive)));
+        }
 
-            if (object_detect) {
-                try {
-                    tracker = new MultiBoxTracker(this);
-                    trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
-                    trackingOverlay.addCallback(
-                            canvas -> tracker.draw(canvas));
+        if (object_detect) {
+            try {
+                tracker = new MultiBoxTracker(this);
+                trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
+                trackingOverlay.addCallback(
+                        canvas -> tracker.draw(canvas));
 
-                    AssetManager am = this.getApplicationContext().getAssets();
-                    //InputStream model = am.open("lite-model_object_detection_mobile_object_localizer_v1_1_metadata_2.tflite");
-                    InputStream model = am.open("lite-model_ssd_mobilenet_v1_1_metadata_2.tflite");
-                    ByteBuffer modelBytes = ByteBuffer.allocateDirect(model.available());
-                    while (model.available() > 0) {
-                        modelBytes.put((byte) model.read());
-                    }
-
-                    List<String> allowedLabels = new ArrayList<>();
-                    allowedLabels.add("car");
-                    allowedLabels.add("truck");
-                    allowedLabels.add("airplane");
-                    allowedLabels.add("boat");
-                    allowedLabels.add("person");
-
-                    ObjectDetector.ObjectDetectorOptions options = ObjectDetector.ObjectDetectorOptions.builder().setNumThreads(6).setLabelAllowList(allowedLabels).setScoreThreshold(0.5f).build();
-                    objectDetector = ObjectDetector.createFromBufferAndOptions(modelBytes, options);
-                } catch (Exception e) {
-                    Log.i(TAG, String.format("Failed to load TFLite model: %s", e));
+                AssetManager am = this.getApplicationContext().getAssets();
+                //InputStream model = am.open("lite-model_object_detection_mobile_object_localizer_v1_1_metadata_2.tflite");
+                InputStream model = am.open("lite-model_ssd_mobilenet_v1_1_metadata_2.tflite");
+                ByteBuffer modelBytes = ByteBuffer.allocateDirect(model.available());
+                while (model.available() > 0) {
+                    modelBytes.put((byte) model.read());
                 }
-            }
+                model.close();
+                am.close();
 
+                List<String> allowedLabels = new ArrayList<>();
+                allowedLabels.add("car");
+                allowedLabels.add("truck");
+                allowedLabels.add("airplane");
+                allowedLabels.add("boat");
+                allowedLabels.add("person");
+
+                ObjectDetector.ObjectDetectorOptions options = ObjectDetector.ObjectDetectorOptions.builder().setNumThreads(6).setLabelAllowList(allowedLabels).setScoreThreshold(0.4f).build();
+                objectDetector = ObjectDetector.createFromBufferAndOptions(modelBytes, options);
+                Toast.makeText(getApplicationContext(), "Loaded Tensorflow model",Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Log.i(TAG, String.format("Failed to load TFLite model: %s", e));
+                Toast.makeText(getApplicationContext(), String.format("Failed to load Tensorflow model: %s", e),Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -363,6 +368,7 @@ public class CompleteWidgetActivity extends Activity {
                         if (rtmp_hd) {
                             Log.i(TAG, "Streaming in 1080p");
                             l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_1920_1080 );
+                            VideoFeeder.getInstance().setTranscodingDataRate(20.0f);
                         } else {
                             Log.i(TAG, "Streaming in 480p");
                             l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_480_360 );
@@ -486,43 +492,17 @@ public class CompleteWidgetActivity extends Activity {
         });
 
         if (object_detect) {
-            //AtomicBoolean processingFrame = new AtomicBoolean(false);
-            VideoFeeder.getInstance().getSecondaryVideoFeed().addVideoDataListener((videoBuffer, size) -> {
-                try {
-                    //if (processingFrame.get())
-                    //    return;
-                    //processingFrame.set(true);
-
-                    Bitmap bitmap = fpvWidget.getBitmap();
-                    if (bitmap == null)
-                        return;
-
-                    // Creates inputs for reference.
-                    TensorImage image = TensorImage.fromBitmap(bitmap);
-                    // Run inference
-                    List<Detection> results = objectDetector.detect(image);
-
-                    final List<Detector.Recognition> mappedRecognitions = new ArrayList<>();
-                    for (Detection result : results) {
-                        final RectF location = result.getBoundingBox();
-                        List<Category> labels = result.getCategories();
-                        for (Category label : labels) {
-                            final float score = label.getScore();
-                            final int id = label.getIndex();
-                            final String title = label.getLabel();
-                            mappedRecognitions.add(new Detector.Recognition(String.valueOf(id), title, score, location));
-                        }
+            objectDetector_handler.postDelayed(objectDetector_runnable = () -> {
+                objectDetector_handler.postDelayed(objectDetector_runnable, 500);
+                Thread objectDetect = new Thread(() -> runObjectDetection());
+                if (!objectDetect.isAlive())
+                    try {
+                        objectDetect.start();
+                        objectDetect.join();
+                    } catch(Exception e) {
+                        Log.i(TAG, String.format("Thread error: %s",e));
                     }
-
-                    tracker.trackResults(mappedRecognitions, ++timestamp);
-                    trackingOverlay.postInvalidate();
-
-                    //processingFrame.set(false);
-                } catch (Exception e) {
-                    Log.i(TAG, String.format("Something bad happened doing TFLite: %s", e));
-                    //processingFrame.set(false);
-                }
-            });
+            }, 500);
         }
 
         boolean controller_status = initFlightController();
@@ -599,6 +579,39 @@ public class CompleteWidgetActivity extends Activity {
         }
 
         mapWidget.onResume();
+    }
+
+    private void runObjectDetection() {
+        try {
+            Bitmap bitmap = fpvWidget.getBitmap();
+            if (bitmap == null) {
+                Log.i(TAG, "fpvWidget.getBitmap returned null");
+                return;
+            }
+
+            // Creates inputs for reference.
+            TensorImage image = TensorImage.fromBitmap(bitmap);
+            // Run inference
+            List<Detection> results = objectDetector.detect(image);
+
+            final List<Detector.Recognition> mappedRecognitions = new ArrayList<>();
+            for (Detection result : results) {
+                final RectF location = result.getBoundingBox();
+                List<Category> labels = result.getCategories();
+                for (Category label : labels) {
+                    final float score = label.getScore();
+                    final int id = label.getIndex();
+                    final String title = label.getLabel();
+                    mappedRecognitions.add(new Detector.Recognition(String.valueOf(id), title, score, location));
+                }
+            }
+
+            tracker.trackResults(mappedRecognitions, ++timestamp);
+            trackingOverlay.postInvalidate();
+
+        } catch (Exception e) {
+            Log.i(TAG, String.format("Something bad happened doing TFLite: %s", e));
+        }
     }
 
     private boolean isFlightControllerSupported() {
@@ -740,6 +753,7 @@ public class CompleteWidgetActivity extends Activity {
         Log.i(TAG, "Stopping sensor thread");
         Toast.makeText(getApplicationContext(), "Stopping UAS Location Updates", Toast.LENGTH_SHORT).show();
         sensor_handler.removeCallbacks(sensor_runnable);
+        objectDetector_handler.removeCallbacks(objectDetector_runnable);
         // stop the stream
         if (l!=null && l.isStreaming()) {
             Log.i(TAG, "Stopping stream thread");
@@ -748,9 +762,6 @@ public class CompleteWidgetActivity extends Activity {
             stream_handler.removeCallbacks(stream_runnable);
         }
 
-
-        //if (model != null)
-        //    model.close();
         mapWidget.onPause();
         super.onPause();
     }
@@ -761,6 +772,7 @@ public class CompleteWidgetActivity extends Activity {
         Log.i(TAG, "Stopping sensor thread");
         Toast.makeText(getApplicationContext(), "Stopping UAS Location Updates", Toast.LENGTH_SHORT).show();
         sensor_handler.removeCallbacks(sensor_runnable);
+        objectDetector_handler.removeCallbacks(objectDetector_runnable);
         // stop the stream
         if (l!=null && l.isStreaming()) {
             Log.i(TAG, "Stopping stream thread");
@@ -769,8 +781,6 @@ public class CompleteWidgetActivity extends Activity {
             stream_handler.removeCallbacks(stream_runnable);
         }
 
-        //if (model != null)
-        //    model.close();
         mapWidget.onDestroy();
         super.onDestroy();
     }
