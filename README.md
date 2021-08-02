@@ -1,5 +1,12 @@
 # FreeTAKUAS
-DJI drone flying app with integrations for FreeTAKServer
+DJI drone flying app with integrations for FreeTAKServer (FTS)
+
+Features include:
+
+ * Automatic transmission for drone's point position location information (PPLI), sensor point of interset (SPI), and field of view (FOV)
+ * Interactive Curson on Target creation thought FTS's REST API (GeoObject)
+ * RTMP streaming to remote server
+ * Object detection using Tensorflow Lite
 
 # Connecting the DJI flight controller
 The first time the app detects the DJI controller it will ask you to associate the controller USB device with FreeTAK UAS.
