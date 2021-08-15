@@ -71,4 +71,7 @@
 
     <string name="mapbox_id">${MAPBOX_DOWNLOADS_TOKEN}</string>
     <string name="enable_object_detection">Enable Object Detection</string>
+    <string name="set_score_threshold">Set Score Threshold</string>
+    <string name="thread_count">Set Thread Count</string>
+    <string name="high_confidence">High Confidence (75%)</string>
 </resources>

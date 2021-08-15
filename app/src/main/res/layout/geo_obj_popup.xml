@@ -29,8 +29,7 @@
             android:id="@+id/attitude"
             android:layout_width="135dp"
             android:layout_height="wrap_content"
-            android:layout_below="@id/attitude_text"
-            />
+            android:layout_below="@id/attitude_text" />
 
         <Button
             android:id="@+id/sendPopupBtn"

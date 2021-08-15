@@ -47,6 +47,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -74,11 +75,13 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final String LAST_USED_DRONE_NAME = "drone_name";
     private static final String LAST_USED_RTMP_IP = "rtmp_ip";
     private static final String LAST_USED_RTMP_HD = "rtmp_hd";
-    private static final String LAST_USED_OD_HD = "object_detect";
+    private static final String LAST_USED_OD = "object_detect";
+    private static final String LAST_USE_OD_75 = "od_75";
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static boolean isAppStarted = false;
-    public int ready = 0;
-
+    private static boolean oldFTS = true;
+    private String apiversion;
+    private int ready = 0;
     private final Handler button_handler = new Handler();
     private final Handler server_handler = new Handler();
     private Runnable button_runnable;
@@ -186,7 +189,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final int REQUEST_PERMISSION_CODE = 12345;
     private List<String> missingPermission = new ArrayList<>();
     private EditText FtsIpEditText, FtsApiEditText, DroneNameEditText, RtmpIpEditText;
-    private CheckBox RtmpHDEnable, ObjectDetectionEnable;
+    private CheckBox RtmpHDEnable, ObjectDetectionEnable, ODHighScore;
 
 
     @Override
@@ -203,27 +206,31 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
 
         RtmpHDEnable = (CheckBox) findViewById(R.id.hd_stream);
         RtmpHDEnable.setChecked(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(LAST_USED_RTMP_HD, false));
-        RtmpHDEnable.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_RTMP_HD, true).apply();
-                } else {
-                    PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_RTMP_HD, false).apply();
-                }
+        RtmpHDEnable.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_RTMP_HD, true).apply();
+            } else {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_RTMP_HD, false).apply();
             }
         });
 
         ObjectDetectionEnable = (CheckBox) findViewById(R.id.object_detector);
-        ObjectDetectionEnable.setChecked(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(LAST_USED_OD_HD, false));
-        ObjectDetectionEnable.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_OD_HD, true).apply();
-                } else {
-                    PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_OD_HD, false).apply();
-                }
+        ObjectDetectionEnable.setChecked(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(LAST_USED_OD, false));
+        ObjectDetectionEnable.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_OD, true).apply();
+            } else {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_OD, false).apply();
+            }
+        });
+
+        ODHighScore = (CheckBox) findViewById(R.id.od_75);
+        ODHighScore.setChecked(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(LAST_USE_OD_75, false));
+        ODHighScore.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USE_OD_75, true).apply();
+            } else {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USE_OD_75, false).apply();
             }
         });
 
@@ -232,23 +239,20 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
         else
             FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, BuildConfig.FTSIP));
-        FtsIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH
-                        || actionId == EditorInfo.IME_ACTION_DONE
-                        || event != null
-                        && event.getAction() == KeyEvent.ACTION_DOWN
-                        && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                    if (event != null && event.isShiftPressed()) {
-                        return false;
-                    } else {
-                        // the user is done typing.
-                        handleFtsIPTextChange();
-                    }
+        FtsIpEditText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH
+                    || actionId == EditorInfo.IME_ACTION_DONE
+                    || event != null
+                    && event.getAction() == KeyEvent.ACTION_DOWN
+                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                if (event != null && event.isShiftPressed()) {
+                    return false;
+                } else {
+                    // the user is done typing.
+                    handleFtsIPTextChange();
                 }
-                return false; // pass on to other listeners.
             }
+            return false; // pass on to other listeners.
         });
         FtsIpEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -276,23 +280,20 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, ""));
         else
             FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, BuildConfig.FTSAPIKEY));
-        FtsApiEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH
-                        || actionId == EditorInfo.IME_ACTION_DONE
-                        || event != null
-                        && event.getAction() == KeyEvent.ACTION_DOWN
-                        && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                    if (event != null && event.isShiftPressed()) {
-                        return false;
-                    } else {
-                        // the user is done typing.
-                        handleFtsApiKeyTextChange();
-                    }
+        FtsApiEditText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH
+                    || actionId == EditorInfo.IME_ACTION_DONE
+                    || event != null
+                    && event.getAction() == KeyEvent.ACTION_DOWN
+                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                if (event != null && event.isShiftPressed()) {
+                    return false;
+                } else {
+                    // the user is done typing.
+                    handleFtsApiKeyTextChange();
                 }
-                return false; // pass on to other listeners.
             }
+            return false; // pass on to other listeners.
         });
         FtsApiEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -320,23 +321,20 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, ""));
         else
             RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, BuildConfig.RTMPIP));
-        RtmpIpEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH
-                        || actionId == EditorInfo.IME_ACTION_DONE
-                        || event != null
-                        && event.getAction() == KeyEvent.ACTION_DOWN
-                        && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                    if (event != null && event.isShiftPressed()) {
-                        return false;
-                    } else {
-                        // the user is done typing.
-                        handleRtmpIpTextChange();
-                    }
+        RtmpIpEditText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH
+                    || actionId == EditorInfo.IME_ACTION_DONE
+                    || event != null
+                    && event.getAction() == KeyEvent.ACTION_DOWN
+                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                if (event != null && event.isShiftPressed()) {
+                    return false;
+                } else {
+                    // the user is done typing.
+                    handleRtmpIpTextChange();
                 }
-                return false; // pass on to other listeners.
             }
+            return false; // pass on to other listeners.
         });
         RtmpIpEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -364,23 +362,20 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, ""));
         else
             DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, BuildConfig.DRONENAME));
-        DroneNameEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH
-                        || actionId == EditorInfo.IME_ACTION_DONE
-                        || event != null
-                        && event.getAction() == KeyEvent.ACTION_DOWN
-                        && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                    if (event != null && event.isShiftPressed()) {
-                        return false;
-                    } else {
-                        // the user is done typing.
-                        handleDroneNameTextChange();
-                    }
+        DroneNameEditText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH
+                    || actionId == EditorInfo.IME_ACTION_DONE
+                    || event != null
+                    && event.getAction() == KeyEvent.ACTION_DOWN
+                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                if (event != null && event.isShiftPressed()) {
+                    return false;
+                } else {
+                    // the user is done typing.
+                    handleDroneNameTextChange();
                 }
-                return false; // pass on to other listeners.
             }
+            return false; // pass on to other listeners.
         });
         DroneNameEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -400,6 +395,47 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                     final String currentText = DroneNameEditText.getText().toString();
                     DroneNameEditText.setText(currentText.substring(0, currentText.indexOf('\n')));
                     handleDroneNameTextChange();
+                }
+            }
+        });
+        FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
+        if (BuildConfig.RELEASE)
+            FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
+        else
+            FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, BuildConfig.FTSIP));
+        FtsIpEditText.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH
+                    || actionId == EditorInfo.IME_ACTION_DONE
+                    || event != null
+                    && event.getAction() == KeyEvent.ACTION_DOWN
+                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                if (event != null && event.isShiftPressed()) {
+                    return false;
+                } else {
+                    // the user is done typing.
+                    handleFtsIPTextChange();
+                }
+            }
+            return false; // pass on to other listeners.
+        });
+        FtsIpEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (s != null && s.toString().contains("\n")) {
+                    // the user is done typing.
+                    // remove new line characcter
+                    final String currentText = FtsIpEditText.getText().toString();
+                    FtsIpEditText.setText(currentText.substring(0, currentText.indexOf('\n')));
+                    handleFtsIPTextChange();
                 }
             }
         });
@@ -508,7 +544,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
 
             if (!enable_controller_button()) {
                 if ((ready & 16) == 0 && (ready & 3) == 3) {
-                    Toast.makeText(getApplicationContext(), "Your configured FTS does not appear to support the UAS client", Toast.LENGTH_SHORT).show();
+                    if (oldFTS)
+                        Toast.makeText(getApplicationContext(), String.format("Your FTS version: %s does not support the UAS client", apiversion), Toast.LENGTH_SHORT).show();
+                    else
+                        Toast.makeText(getApplicationContext(), "Failed to connect to FTS, check your config", Toast.LENGTH_SHORT).show();
                     return;
                 } else if (ready < 0x20) {
                     Toast.makeText(getApplicationContext(), "No controller detected and/or configuration is missing!", Toast.LENGTH_SHORT).show();
@@ -591,7 +630,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
 
     public void server_version_supported() {
 
-        String apiversion;
         String ftsip = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsip","");
         String ftsapikey = PreferenceManager.getDefaultSharedPreferences(this).getString("ftsapikey","");
 
@@ -630,17 +668,18 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
 
             try {
                 JSONObject content = new JSONObject(ResponseObject.get("Content").toString());
-                 apiversion = content.get("APIVersion").toString();
+                apiversion = content.get("APIVersion").toString();
                 if (Float.parseFloat(apiversion) < 1.9f) {
                     Log.i(TAG, String.format("FTS version %s does not support FreeTakUAS",apiversion));
                     return;
                 }
+                oldFTS = false;
             } catch (JSONException e) {
                 Log.i(TAG, "Didn't receive JSON from the server");
                 return;
             }
         } catch (Exception e) {
-            Log.i(TAG, String.format("Problem validating the FTS api version: %s", e.toString()));
+            Log.i(TAG, String.format("Problem connecting to FTS: %s", e.toString()));
             return;
         }
         Log.i(TAG, String.format("FTS version %s API check success",apiversion));

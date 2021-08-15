@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.RectF;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -116,7 +117,7 @@ public class CompleteWidgetActivity extends Activity {
     int stream_delay = 3000;
 
     public String RTMP_URL = "";
-    public boolean rtmp_hd, object_detect;
+    public boolean rtmp_hd, object_detect, od_75;
     public String FTS_IP, FTS_APIKEY, drone_name, rtmp_ip;
     public double droneLocationLat, droneLocationLng, droneDistance, droneHeading;
     public double homeLocationLat, homeLocationLng;
@@ -177,6 +178,7 @@ public class CompleteWidgetActivity extends Activity {
         rtmp_ip = PreferenceManager.getDefaultSharedPreferences(this).getString("rtmp_ip", "");
         rtmp_hd = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("rtmp_hd", false);
         object_detect = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("object_detect", false);
+        od_75  = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("od_75", false);
 
         String rtmp_path = "/live/UAS-" + drone_name;
         RTMP_URL = "rtmp://" + rtmp_ip + rtmp_path;
@@ -203,12 +205,7 @@ public class CompleteWidgetActivity extends Activity {
         fpvOverlayWidget.setTouchFocusEnabled(false);
 
         fpvWidget = findViewById(R.id.fpv_widget);
-        fpvWidget.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                onViewClick(fpvWidget);
-            }
-        });
+        fpvWidget.setOnClickListener(view -> onViewClick(fpvWidget));
 
         primaryVideoView = (RelativeLayout) findViewById(R.id.fpv_container);
 
@@ -248,7 +245,15 @@ public class CompleteWidgetActivity extends Activity {
                 allowedLabels.add("boat");
                 allowedLabels.add("person");
 
-                ObjectDetector.ObjectDetectorOptions options = ObjectDetector.ObjectDetectorOptions.builder().setNumThreads(6).setLabelAllowList(allowedLabels).setScoreThreshold(0.4f).build();
+                // Leave at least 2 cores open for the OS
+                int numThreads = (Runtime.getRuntime().availableProcessors() * 2) - 2;
+
+                // 42% score threshold default
+                float thresholdScore = 0.42f;
+                if (od_75)
+                    thresholdScore = 0.75f;
+
+                ObjectDetector.ObjectDetectorOptions options = ObjectDetector.ObjectDetectorOptions.builder().setNumThreads(numThreads).setLabelAllowList(allowedLabels).setScoreThreshold(thresholdScore).build();
                 objectDetector = ObjectDetector.createFromBufferAndOptions(modelBytes, options);
                 Toast.makeText(getApplicationContext(), "Loaded Tensorflow model",Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
@@ -364,22 +369,23 @@ public class CompleteWidgetActivity extends Activity {
                     if (!l.isStreaming() && stream_enabled) {
                         Log.i(TAG,String.format("RTMP URL: %s", RTMP_URL));
 
-                        if (rtmp_hd) {
-                            Log.i(TAG, "Streaming in 1080p");
-                            l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_1920_1080 );
-                            VideoFeeder.getInstance().setTranscodingDataRate(20.0f);
-                        } else {
-                            Log.i(TAG, "Streaming in 480p");
-                            l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_480_360 );
-                            VideoFeeder.getInstance().setTranscodingDataRate(0.3f);
-                        }
 
-                        l.setLiveVideoBitRate(LiveVideoBitRateMode.AUTO.getValue());
-                        l.setVideoSource(LiveStreamManager.LiveStreamVideoSource.Primary);
+                        //l.setLiveVideoBitRate(LiveVideoBitRateMode.AUTO.getValue());
                         l.setAudioStreamingEnabled(false);
                         l.setAudioMuted(true);
                         l.setVideoEncodingEnabled(true);
                         l.setLiveUrl(RTMP_URL);
+                        l.setVideoSource(LiveStreamManager.LiveStreamVideoSource.Primary);
+
+                        if (rtmp_hd) {
+                            Log.i(TAG, "Streaming in 1080p");
+                            //l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_1920_1080 );
+                            //VideoFeeder.getInstance().setTranscodingDataRate(20.0f);
+                        } else {
+                            Log.i(TAG, "Streaming in 480p");
+                            //l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_480_360 );
+                            //VideoFeeder.getInstance().setTranscodingDataRate(0.3f);
+                        }
 
                         int rc = 0;
                         rc = l.startStream();
@@ -389,11 +395,17 @@ public class CompleteWidgetActivity extends Activity {
                             if (rc == 254) {
                                 Toast.makeText(getApplicationContext(), "ERROR: Check your RTMP configuration\nStopping stream attempts", Toast.LENGTH_LONG).show();
                                 // kill this thread, the IP:Port are bad
+                                stream_toggle.setChecked(false);
+                                stream_enabled = false;
                                 stream_handler.removeCallbacks(stream_runnable);
                             }
-                        } else {
+                        } else if (l.isStreaming() && rc ==0){
                             new SendCotTask(CompleteWidgetActivity.this).execute("start_stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
                             Toast.makeText(getApplicationContext(), "RTMP Stream Established Successfully", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getApplicationContext(), "RTMP Stream failed to start", Toast.LENGTH_SHORT).show();
+                            stream_toggle.setChecked(false);
+                            stream_enabled = false;
                         }
                     }
                 }, stream_delay);
@@ -497,7 +509,7 @@ public class CompleteWidgetActivity extends Activity {
                 if (!objectDetect.isAlive())
                     try {
                         objectDetect.start();
-                        objectDetect.join();
+                        //objectDetect.join();
                     } catch(Exception e) {
                         Log.i(TAG, String.format("Thread error: %s",e));
                     }
