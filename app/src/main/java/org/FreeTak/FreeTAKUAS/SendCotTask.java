@@ -1,12 +1,8 @@
 package org.FreeTak.FreeTAKUAS;
 
-import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
-
-//import com.amap.api.maps.model.LatLng;
-import com.google.gson.annotations.JsonAdapter;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,10 +14,17 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.DatagramPacket;
 import java.net.HttpURLConnection;
+import java.net.MulticastSocket;
 import java.net.URL;
-
-import dji.sdk.sdkmanager.DJISDKManager;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 import static java.lang.Math.tan;
 
@@ -38,6 +41,133 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
     @Override
     protected String doInBackground(Object... data) {
         try {
+
+            if (parent.multicast) {
+
+                String CotType = (String) data[0];
+                String name = (String) data[1];
+                float altitude    = (float) data[2];
+                double latitude   = (double) data[3];
+                double longitude  = (double) data[4];
+                double distance   = (double) data[5];
+                double heading    = (double) data[6];
+                String camera_fov = (String) data[7];
+                float gimbalPitch = (float) data[8];
+                String uid        = (String) data[9];
+
+                // the range to the target
+                // ref: https://stonekick.com/blog/using-basic-trigonometry-to-measure-distance.html
+                double range;
+                if (altitude == 0)
+                    range = 0.001 / Math.tan(Math.toRadians(gimbalPitch));
+                else
+                    range = (altitude) / Math.tan(Math.toRadians(gimbalPitch));
+
+                // range to horizon, 3.28084ft per meter, 1.169 nautical mile, 1852.001 meters per nautical mile
+                if (gimbalPitch == 0)
+                    range = 1.169 *  Math.sqrt(altitude*3.28084) * 1852.001;
+
+                range = Math.abs(range);
+                double fov = Math.abs(4 * (tan(Math.toRadians(gimbalPitch)/2) * range));
+
+                byte[] bytes;
+                String message = new String();
+
+                String time = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+                String startTime = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+                String staleTime = ZonedDateTime.now().plusMinutes(1).format(DateTimeFormatter.ISO_INSTANT);
+
+                Log.i(TAG, String.format("startTime: %s , staleTime: %s", time, staleTime));
+
+                if (CotType.equalsIgnoreCase("sensor")) {
+                    // sensor
+                    /*
+                    <event uid="62df51a0-0150-11ec-b1d3-a11d7a026313" type="a-f-A-M-H-Q" how="m-g" start="2021-08-20T00:48:51.416706Z" time="2021-08-20T00:48:51.416683Z" stale="2021-08-20T00:49:51.416716Z">
+                        <detail>
+                            <contact callsign="djcombo" />
+                            <sensor elevation="0.0" vfov="60" north="227" roll="0.0" range="0.057289961630759424" azimuth="142.3000030517578" model="Drone Camera" fov="0.0019998476835571253" type="r-e" version="0.6" />
+                            <track course="142.3000030517578" speed="-0.00" slope="0.00" />
+                            <__video url="rtmp://172.30.254.237:1935/live/UAS-djcombo" />
+                        </detail>
+                        <point le="9999999.0" ce="9999999.0" hae="9999999.0" lon="-80.55856936131484" lat="28.055231911152244" />
+                    </event>
+                    */
+                    message = String.format("<event uid=\"%s\" type=\"a-f-A-M-H-Q\" how=\"m-g\" start=\"%s\" time=\"%s\" stale=\"%s\">\n" +
+                            "                        <detail>\n" +
+                            "                            <contact callsign=\"%s\" />\n" +
+                            "                            <sensor elevation=\"%f\" vfov=\"%s\" north=\"227\" roll=\"0.0\" range=\"%f\" azimuth=\"%f\" model=\"Drone Camera\" fov=\"%f\" type=\"r-e\" version=\"0.6\" />\n" +
+                            "                            <track course=\"%f\" speed=\"-0.00\" slope=\"0.00\" />\n" +
+                            "                            <__video url=\"udp://239.1.1.221:1234/live/UAS-%s\" />\n" +
+                            "                        </detail>\n" +
+                            "                        <point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"%f\" lat=\"%f\" />\n" +
+                            "                    </event>", uid, startTime, time, staleTime, name, altitude, camera_fov, distance, heading, fov, heading, name, longitude, latitude);
+
+                    //message = String.format("<event uid=\"%s_sensor\" type=\"a-f-A-M-H-Q\" how=\"m-g\" start=\"%s\" time=\"%s\" stale=\"%s\"><detail><contact callsign=\"%s\" /><sensor elevation=\"%f\" vfov=\"%s\" north=\"%f\" roll=\"0.0\" range=\"%f\" azimuth=\"%f\" model=\"Drone Camera\" fov=\"%f\" type=\"r-e\" version=\"0.6\" /><track course=\"%f\" speed=\"-0.00\" slope=\"0.00\" /><__video url=\"udp://239.1.1.221:1234/live/UAS-%s\" /></detail><point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"%f\" lat=\"%f\" /></event>", uid, time, staleTime, time, name, altitude, camera_fov, heading, distance, heading, fov, heading, name, longitude, latitude);
+
+                } else if (CotType.equalsIgnoreCase("SPI")) {
+                    // SPI
+                    /*
+                    <event uid="62df51a1-0150-11ec-b1d3-a11d7a026313" type="b-m-p-s-p-i" how="m-g" start="2021-08-20T00:48:50.951156Z" time="2021-08-20T00:48:50.951112Z" stale="2021-08-20T00:49:50.951184Z">
+                        <detail>
+                        <precisionlocation altsrc="GPS" />
+                            <contact callsign="djcombo_SPI" />
+                            <link uid="62df51a0-0150-11ec-b1d3-a11d7a026313" relation="p-p" type="a-f-A-M-H-Q" />
+                        </detail>
+                        <point le="9999999.0" ce="9999999.0" hae="9999999.0" lon="-80.55867880994495" lat="28.05522499487069" />
+                    </event>
+                    */
+                    double[] spiLatLng = parent.moveLatLng(latitude, longitude, range, heading);
+                    message = String.format("<event uid=\"%s-SPI\" type=\"b-m-p-s-p-i\" how=\"m-g\" start=\"%s\" time=\"%s\" stale=\"%s\">\n" +
+                            "                        <detail>\n" +
+                            "                        <precisionlocation altsrc=\"GPS\" />\n" +
+                            "                            <contact callsign=\"%s_SPI\" />\n" +
+                            "                            <link uid=\"%s\" relation=\"p-p\" type=\"a-f-A-M-H-Q\" />\n" +
+                            "                        </detail>\n" +
+                            "                        <point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"%f\" lat=\"%f\" />\n" +
+                            "                    </event>",uid, startTime, time, staleTime, name, uid, spiLatLng[1], spiLatLng[0]);
+
+                } else if (CotType.equalsIgnoreCase("video_on")) {
+                    // Video on
+                    /*
+                    <event uid="544085c4-0150-11ec-b1d3-a11d7a026313" type="b-i-v" how="m-g" start="2021-08-20T00:48:26.417822Z" time="2021-08-20T00:48:26.417683Z" stale="2021-08-20T00:49:26.417874Z">
+                        <detail>
+                            <contact callsign="Video stream from djcombo" />
+                            <link uid="544085c4-0150-11ec-b1d3-a11d7a026313" production_time="2021-08-20T00:49:26Z" />
+                            <__video>
+                                <ConnectionEntry uid="544085c4-0150-11ec-b1d3-a11d7a026313" path="/live/UAS-djcombo" protocol="rtmp" address="172.30.254.237" port="1935" alias="Video stream from djcombo" />
+                            </__video>
+                        </detail>
+                        <point le="9999999.0" ce="9999999.0" hae="9999999.0" lon="0" lat="0" />
+                    </event>
+                    */
+                    message = String.format("<event uid=\"%s-video\" type=\"b-i-v\" how=\"m-g\" start=\"%s\" time=\"%s\" stale=\"%s\">\n" +
+                            "                        <detail>\n" +
+                            "                            <contact callsign=\"Video stream from %s\" />\n" +
+                            "                            <link uid=\"%s_video\" production_time=\"%s\" />\n" +
+                            "                            <__video>\n" +
+                            "                                <ConnectionEntry uid=\"%s-video\" path=\"/live/UAS-%s\" protocol=\"udp\" address=\"239.1.1.221\" port=\"1234\" alias=\"Video stream from %s\" />\n" +
+                            "                            </__video>\n" +
+                            "                        </detail>\n" +
+                            "                        <point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"0\" lat=\"0\" />\n" +
+                            "                    </event>", uid, startTime, time, staleTime, name, uid, time, uid, name, name);
+                } else if (CotType.equalsIgnoreCase(("geoObject"))) {
+                    // GeoObject
+                    //<event version="2.0" uid="94067db8-076a-11ec-b1d3-a11d7a026313" type="a-u-G" how="h-g-i-g-o" start="2021-08-27T19:11:28.955667Z" time="2021-08-27T19:11:28.955627Z" stale="2021-08-27T20:51:28.955884Z"><detail><contact callsign="Bravo-0" /></detail><point le="9999999.0" ce="9999999.0" hae="9999999.0" lon="-80.5585624417065" lat="28.055229448489705" /></event>
+                    message = String.format("<event version=\"2.0\" uid=\"%s_%s\" type=\"a-%s-G\" how=\"h-g-i-g-o\" start=\"%s\" time=\"%s\" stale=\"%s\"><detail><contact callsign=\"%s\" /></detail><point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"%f\" lat=\"%f\" /></event>", uid, name.split("_")[0], name.split("_")[1].substring(0,1), startTime, time, staleTime, name, longitude, latitude);
+                }
+
+                Log.i(TAG, String.format("Multicast message: %s", message));
+
+                bytes = message.getBytes(StandardCharsets.UTF_8);
+                DatagramPacket packet = new DatagramPacket(bytes, bytes.length, parent.getMutlicastGroup(), 6969);
+                try {
+                    parent.getMulticastSocket().send(packet);
+                } catch (Exception e) {
+                    Log.i(TAG, String.format("failed to send multicast message: %s", e));
+                }
+                return "";
+            }
+
             String method = "POST";
             URL url = null;
 
@@ -192,6 +322,9 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
         //Toast.makeText(parent.getApplicationContext(), String.format("SERVER RESPONSE: %s",result), Toast.LENGTH_LONG).show();
 
         try {
+            if (result.isEmpty())
+                return;
+
             JSONObject jsonObject = new JSONObject(result);
             if (jsonObject.get("Code").toString().equalsIgnoreCase("200")) {
                 if (jsonObject.get("Message").toString().equalsIgnoreCase("OK")) {

@@ -74,4 +74,5 @@
     <string name="set_score_threshold">Set Score Threshold</string>
     <string name="thread_count">Set Thread Count</string>
     <string name="high_confidence">High Confidence (75%)</string>
+    <string name="multicast_only">No Server (Multicast Only)</string>
 </resources>

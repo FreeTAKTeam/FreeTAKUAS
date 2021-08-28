@@ -77,8 +77,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final String LAST_USED_RTMP_HD = "rtmp_hd";
     private static final String LAST_USED_OD = "object_detect";
     private static final String LAST_USE_OD_75 = "od_75";
+    private static final String LAST_USED_NOSERVER = "no_server";
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
     private static boolean isAppStarted = false;
+    private static boolean useMulticast = false;
     private static boolean oldFTS = true;
     private String apiversion;
     private int ready = 0;
@@ -189,7 +191,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private static final int REQUEST_PERMISSION_CODE = 12345;
     private List<String> missingPermission = new ArrayList<>();
     private EditText FtsIpEditText, FtsApiEditText, DroneNameEditText, RtmpIpEditText;
-    private CheckBox RtmpHDEnable, ObjectDetectionEnable, ODHighScore;
+    private CheckBox RtmpHDEnable, ObjectDetectionEnable, ODHighScore, NoServerEnable;
 
 
     @Override
@@ -202,7 +204,26 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         //findViewById(R.id.bt_customized_ui_widgets).setOnClickListener(this);
         //findViewById(R.id.bt_map_widget).setOnClickListener(this);
         TextView versionText = (TextView) findViewById(R.id.app_version);
-        versionText.setText(String.format("FreeTakUAS Version: %s",BuildConfig.VERSION_NAME));
+        versionText.setText(String.format("FreeTakUAS Version: %s", BuildConfig.VERSION_NAME));
+
+        NoServerEnable = (CheckBox) findViewById(R.id.NoServer);
+        NoServerEnable.setChecked(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(LAST_USED_NOSERVER, false));
+        NoServerEnable.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_NOSERVER, true).apply();
+                useMulticast = true;
+                FtsIpEditText.setText("multicast mode");
+                RtmpIpEditText.setText("multicast mode");
+                FtsApiEditText.setText("multicast mode");
+            } else {
+                PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_NOSERVER, false).apply();
+                useMulticast = false;
+                FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
+                FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, ""));
+                RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, ""));
+            }
+            enable_controller_button();
+        });
 
         RtmpHDEnable = (CheckBox) findViewById(R.id.hd_stream);
         RtmpHDEnable.setChecked(PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getBoolean(LAST_USED_RTMP_HD, false));
@@ -234,6 +255,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             }
         });
 
+        // fts ip/port
         FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
         if (BuildConfig.RELEASE)
             FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
@@ -275,6 +297,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 }
             }
         });
+
+        // fts api key
         FtsApiEditText = (EditText) findViewById(R.id.edittext_fts_apikey);
         if (BuildConfig.RELEASE)
             FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, ""));
@@ -316,6 +340,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 }
             }
         });
+
+        // rtmp ip/port
         RtmpIpEditText = (EditText) findViewById(R.id.edittext_rtmp_ip);
         if (BuildConfig.RELEASE)
             RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, ""));
@@ -357,6 +383,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 }
             }
         });
+
+        // uas identifier
         DroneNameEditText = (EditText) findViewById(R.id.edittext_drone_name);
         if (BuildConfig.RELEASE)
             DroneNameEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_DRONE_NAME, ""));
@@ -398,51 +426,14 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 }
             }
         });
-        FtsIpEditText = (EditText) findViewById(R.id.edittext_fts_ip);
-        if (BuildConfig.RELEASE)
-            FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
-        else
-            FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, BuildConfig.FTSIP));
-        FtsIpEditText.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH
-                    || actionId == EditorInfo.IME_ACTION_DONE
-                    || event != null
-                    && event.getAction() == KeyEvent.ACTION_DOWN
-                    && event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
-                if (event != null && event.isShiftPressed()) {
-                    return false;
-                } else {
-                    // the user is done typing.
-                    handleFtsIPTextChange();
-                }
-            }
-            return false; // pass on to other listeners.
-        });
-        FtsIpEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (s != null && s.toString().contains("\n")) {
-                    // the user is done typing.
-                    // remove new line characcter
-                    final String currentText = FtsIpEditText.getText().toString();
-                    FtsIpEditText.setText(currentText.substring(0, currentText.indexOf('\n')));
-                    handleFtsIPTextChange();
-                }
-            }
-        });
         checkAndRequestPermissions();
-        handleFtsIPTextChange();
-        handleFtsApiKeyTextChange();
-        handleRtmpIpTextChange();
+
+        if (!useMulticast) {
+            handleFtsIPTextChange();
+            handleFtsApiKeyTextChange();
+            handleRtmpIpTextChange();
+        }
         handleDroneNameTextChange();
 
         button_handler.postDelayed(button_runnable = () -> {
@@ -456,6 +447,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 server_handler.removeCallbacks(server_runnable);
                 return;
             }
+
+            if (useMulticast) return;
             Thread apicheck = new Thread(() -> server_version_supported());
             if (!apicheck.isAlive() && ((ready & 3) == 3)) // make sure ftsIp and ftsApikey are set
                 try {
@@ -575,10 +568,9 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             popup.show();
             return;
         }
-        */
         Intent intent = new Intent(this, nextActivityClass);
         startActivity(intent);
-
+        */
     }
 
     @Override
@@ -689,6 +681,11 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
     private boolean enable_controller_button() {
 
         if (ready == 0x3f) {
+            ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_enabled);
+            findViewById(R.id.complete_ui_widgets).setEnabled(true);
+            button_handler.removeCallbacks(button_runnable);
+            return true;
+        } else if (useMulticast && (ready & 8) == 8) {
             ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_enabled);
             findViewById(R.id.complete_ui_widgets).setEnabled(true);
             button_handler.removeCallbacks(button_runnable);

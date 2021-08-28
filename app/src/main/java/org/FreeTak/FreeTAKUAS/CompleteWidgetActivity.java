@@ -45,14 +45,19 @@ import org.tensorflow.lite.task.vision.detector.Detection;
 import org.tensorflow.lite.task.vision.detector.ObjectDetector;
 
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import dji.common.airlink.PhysicalSource;
@@ -117,7 +122,7 @@ public class CompleteWidgetActivity extends Activity {
     int stream_delay = 3000;
 
     public String RTMP_URL = "";
-    public boolean rtmp_hd, object_detect, od_75;
+    public boolean rtmp_hd, object_detect, od_75, multicast;
     public String FTS_IP, FTS_APIKEY, drone_name, rtmp_ip;
     public double droneLocationLat, droneLocationLng, droneDistance, droneHeading;
     public double homeLocationLat, homeLocationLng;
@@ -127,6 +132,7 @@ public class CompleteWidgetActivity extends Activity {
     public boolean stream_enabled = false;
     // this holds the geoobj names count
     private Dictionary names = new Hashtable();
+    private Dictionary droneFoVs = new Hashtable();
 
     // ML stuff
     private final Handler objectDetector_handler = new Handler();
@@ -136,10 +142,40 @@ public class CompleteWidgetActivity extends Activity {
     private MultiBoxTracker tracker;
     private long timestamp = 0;
 
+    // Multicast stuff
+    private InetAddress multicastGroup;
+    private MulticastSocket mcs;
+    private String MulticastUID;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_default_widgets);
+
+        droneFoVs.put("UNKNOWN_AIRCRAFT","0");
+        droneFoVs.put("INSPIRE_1","72");
+        droneFoVs.put("INSPIRE_1_PRO","72");
+        droneFoVs.put("INSPIRE_1_RAW","72");
+        droneFoVs.put("INSPIRE_2","72");
+        droneFoVs.put("PHANTOM_3_PROFESSIONAL","94");
+        droneFoVs.put("PHANTOM_3_ADVANCED","94");
+        droneFoVs.put("PHANTOM_3_STANDARD","94");
+        droneFoVs.put("Phantom_3_4K","94");
+        droneFoVs.put("PHANTOM_4","94");
+        droneFoVs.put("PHANTOM_4_PRO","94");
+        droneFoVs.put("PHANTOM_4_PRO_V2","94");
+        droneFoVs.put("P_4_MULTISPECTRAL","62.7");
+        droneFoVs.put("MAVIC_AIR_2","84");
+        droneFoVs.put("MAVIC_2_ENTERPRISE_ADVANCED","84");
+        droneFoVs.put("MAVIC_PRO","78.8");
+        droneFoVs.put("Spark","81.9");
+        droneFoVs.put("MAVIC_AIR","85");
+        droneFoVs.put("MAVIC_2_PRO","77");
+        droneFoVs.put("MAVIC_2_ZOOM","83");
+        droneFoVs.put("MAVIC_2","77");
+        droneFoVs.put("MAVIC_2_ENTERPRISE","82.6");
+        droneFoVs.put("MAVIC_2_ENTERPRISE_DUAL","85");
+        droneFoVs.put("MAVIC_MINI","83");
 
         names.put("Alpha", 0);
         names.put("Bravo", 0);
@@ -179,6 +215,7 @@ public class CompleteWidgetActivity extends Activity {
         rtmp_hd = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("rtmp_hd", false);
         object_detect = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("object_detect", false);
         od_75  = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("od_75", false);
+        multicast = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("no_server", false);
 
         String rtmp_path = "/live/UAS-" + drone_name;
         RTMP_URL = "rtmp://" + rtmp_ip + rtmp_path;
@@ -241,12 +278,15 @@ public class CompleteWidgetActivity extends Activity {
                 List<String> allowedLabels = new ArrayList<>();
                 allowedLabels.add("car");
                 allowedLabels.add("truck");
+                allowedLabels.add("bus");
                 allowedLabels.add("airplane");
                 allowedLabels.add("boat");
                 allowedLabels.add("person");
 
                 // Leave at least 2 cores open for the OS
                 int numThreads = (Runtime.getRuntime().availableProcessors() * 2) - 2;
+                if (numThreads <= 0)
+                    numThreads = 1;
 
                 // 42% score threshold default
                 float thresholdScore = 0.42f;
@@ -259,6 +299,32 @@ public class CompleteWidgetActivity extends Activity {
             } catch (Exception e) {
                 Log.i(TAG, String.format("Failed to load TFLite model: %s", e));
                 Toast.makeText(getApplicationContext(), String.format("Failed to load Tensorflow model: %s", e),Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        if (multicast) {
+            try {
+                boolean found = false;
+                MulticastUID = UUID.randomUUID().toString();
+                multicastGroup = InetAddress.getByName("239.2.3.1");
+                mcs = new MulticastSocket(6969);
+                mcs.setBroadcast(true);
+                for(Enumeration<NetworkInterface> list = NetworkInterface.getNetworkInterfaces(); list.hasMoreElements();) {
+                    NetworkInterface i = list.nextElement();
+                    String interfaceName = i.getDisplayName();
+                    Log.i(TAG, String.format("Interface: %s", interfaceName));
+                    if (interfaceName.startsWith("wlan")) {
+                        mcs.setNetworkInterface(i);
+                        mcs.joinGroup(multicastGroup);
+                        found = true;
+                        Toast.makeText(getApplicationContext(), String.format("Multicasting on %s interface", interfaceName),Toast.LENGTH_SHORT).show();
+                        break;
+                    }
+                }
+                if (!found)
+                    Toast.makeText(getApplicationContext(), String.format("Unable to find WIFI interface"),Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(getApplicationContext(), String.format("Failed to join Multicast group: %s", e),Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -359,7 +425,8 @@ public class CompleteWidgetActivity extends Activity {
 
         l = DJISDKManager.getInstance().getLiveStreamManager();
         stream_toggle = findViewById(R.id.stream_toggle);
-        stream_toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        if (!multicast)
+            stream_toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 stream_toggle.setChecked(true);
                 stream_enabled = true;
@@ -369,8 +436,7 @@ public class CompleteWidgetActivity extends Activity {
                     if (!l.isStreaming() && stream_enabled) {
                         Log.i(TAG,String.format("RTMP URL: %s", RTMP_URL));
 
-
-                        //l.setLiveVideoBitRate(LiveVideoBitRateMode.AUTO.getValue());
+                        l.setLiveVideoBitRate(LiveVideoBitRateMode.AUTO.getValue());
                         l.setAudioStreamingEnabled(false);
                         l.setAudioMuted(true);
                         l.setVideoEncodingEnabled(true);
@@ -379,12 +445,12 @@ public class CompleteWidgetActivity extends Activity {
 
                         if (rtmp_hd) {
                             Log.i(TAG, "Streaming in 1080p");
-                            //l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_1920_1080 );
-                            //VideoFeeder.getInstance().setTranscodingDataRate(20.0f);
+                            l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_1920_1080 );
+                            VideoFeeder.getInstance().setTranscodingDataRate(20.0f);
                         } else {
                             Log.i(TAG, "Streaming in 480p");
-                            //l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_480_360 );
-                            //VideoFeeder.getInstance().setTranscodingDataRate(0.3f);
+                            l.setLiveVideoResolution(LiveVideoResolution.VIDEO_RESOLUTION_480_360 );
+                            VideoFeeder.getInstance().setTranscodingDataRate(0.3f);
                         }
 
                         int rc = 0;
@@ -422,6 +488,7 @@ public class CompleteWidgetActivity extends Activity {
         });
 
         crossHairView = findViewById(R.id.crosshair);
+
         crossHairView.setOnTouchListener((v, event) -> {
 
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -495,7 +562,10 @@ public class CompleteWidgetActivity extends Activity {
                     // update the count for this name
                     names.put(pickedName[0], howMany[0]+1);
 
-                    new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng[0], geoObjLatLng[1], pickedAttitude[0], String.format("%s-%d", pickedName[0], howMany[0]), droneHeading);
+                    if (multicast)
+                        new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", String.format("%s-%d_%s", pickedName[0], howMany[0],pickedAttitude[0]), droneLocationAlt, geoObjLatLng[0], geoObjLatLng[1], droneDistance, droneHeading, getCameraFov(), gimbalPitch, MulticastUID);
+                    else
+                        new SendCotTask(CompleteWidgetActivity.this).execute("geoObject", FTS_IP, FTS_APIKEY, geoObjLatLng[0], geoObjLatLng[1], pickedAttitude[0], String.format("%s-%d", pickedName[0], howMany[0]), droneHeading);
                     popupWindow.dismiss();
                 });
             }
@@ -520,34 +590,7 @@ public class CompleteWidgetActivity extends Activity {
         boolean gimbal_status = initGimbal();
         if (controller_status) {
             if (gimbal_status) {
-                Dictionary droneFoVs = new Hashtable();
-                droneFoVs.put("UNKNOWN_AIRCRAFT","0");
-                droneFoVs.put("INSPIRE_1","72");
-                droneFoVs.put("INSPIRE_1_PRO","72");
-                droneFoVs.put("INSPIRE_1_RAW","72");
-                droneFoVs.put("INSPIRE_2","72");
-                droneFoVs.put("PHANTOM_3_PROFESSIONAL","94");
-                droneFoVs.put("PHANTOM_3_ADVANCED","94");
-                droneFoVs.put("PHANTOM_3_STANDARD","94");
-                droneFoVs.put("Phantom_3_4K","94");
-                droneFoVs.put("PHANTOM_4","94");
-                droneFoVs.put("PHANTOM_4_PRO","94");
-                droneFoVs.put("PHANTOM_4_PRO_V2","94");
-                droneFoVs.put("P_4_MULTISPECTRAL","62.7");
-                droneFoVs.put("MAVIC_AIR_2","84");
-                droneFoVs.put("MAVIC_2_ENTERPRISE_ADVANCED","84");
-                droneFoVs.put("MAVIC_PRO","78.8");
-                droneFoVs.put("Spark","81.9");
-                droneFoVs.put("MAVIC_AIR","85");
-                droneFoVs.put("MAVIC_2_PRO","77");
-                droneFoVs.put("MAVIC_2_ZOOM","83");
-                droneFoVs.put("MAVIC_2","77");
-                droneFoVs.put("MAVIC_2_ENTERPRISE","82.6");
-                droneFoVs.put("MAVIC_2_ENTERPRISE_DUAL","85");
-                droneFoVs.put("MAVIC_MINI","83");
 
-                // dynamically determine what the camera lenses FoV is
-                String camera_fov = droneFoVs.get(DJISDKManager.getInstance().getProduct().getModel().toString()).toString();
 
                 // send sensor CoTs while this activity is open and the drone has real gps data
                 sensor_handler.postDelayed(sensor_runnable = () -> {
@@ -556,8 +599,11 @@ public class CompleteWidgetActivity extends Activity {
                         Log.i(TAG, String.format("Updating drone position: alt %f long %f lat %f distance %f heading %f", droneLocationAlt, droneLocationLng, droneLocationLat, droneDistance, droneHeading));
                         Log.i(TAG, String.format("gimbal stats: pitch: %f roll %f yaw %f", gimbalPitch, gimbalRoll, gimbalYaw));
                         Log.i(TAG, "Sending UAS Location CoT");
-                        new SendCotTask(CompleteWidgetActivity.this).execute("sensor", FTS_IP, FTS_APIKEY, drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, camera_fov, gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading);
-                        if (getDroneSPI() != null) {
+                        if (multicast)
+                            new SendCotTask(CompleteWidgetActivity.this).execute("sensor", drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, getCameraFov(), gimbalPitch, MulticastUID);
+                        else
+                            new SendCotTask(CompleteWidgetActivity.this).execute("sensor", FTS_IP, FTS_APIKEY, drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, getCameraFov(), gimbalPitch, gimbalRoll, gimbalYaw, gimbalYawRelativeToAircraftHeading);
+                        if (getDroneSPI() != null || multicast) {
                             // the range to the target, using angle of depression
                             double range;
                             if (droneLocationAlt == 0)
@@ -574,7 +620,10 @@ public class CompleteWidgetActivity extends Activity {
 
                             double[] spiLatLng = moveLatLng(droneLocationLat, droneLocationLng, range, droneHeading);
                             Log.i(TAG, String.format("Sending SPI lat: %f lng: %f",spiLatLng[0], spiLatLng[1]));
-                            new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spiLatLng[0], spiLatLng[1], String.format("%s SPI",drone_name));
+                            if (multicast)
+                                new SendCotTask(CompleteWidgetActivity.this).execute("SPI", drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, getCameraFov(), gimbalPitch, MulticastUID);
+                            else
+                                new SendCotTask(CompleteWidgetActivity.this).execute("SPI", FTS_IP, FTS_APIKEY, spiLatLng[0], spiLatLng[1], String.format("%s SPI",drone_name));
                         }
                     } else {
                         Log.i(TAG, "No GPS, retrying...");
@@ -633,6 +682,10 @@ public class CompleteWidgetActivity extends Activity {
 
     public static boolean checkGpsCoordinates(double latitude, double longitude) {
         return (latitude > -90 && latitude < 90 && longitude > -180 && longitude < 180) && (latitude != 0f && longitude != 0f);
+    }
+
+    public String getCameraFov() {
+        return droneFoVs.get(DJISDKManager.getInstance().getProduct().getModel().toString()).toString();
     }
 
     private boolean initFlightController() {
@@ -758,6 +811,14 @@ public class CompleteWidgetActivity extends Activity {
         return FTS_DRONE_UID;
     }
 
+    public MulticastSocket getMulticastSocket() {
+        return mcs;
+    }
+
+    public InetAddress getMutlicastGroup() {
+        return multicastGroup;
+    }
+
     @Override
     protected void onPause() {
         // stop the sensor cot generation
@@ -772,7 +833,11 @@ public class CompleteWidgetActivity extends Activity {
             l.stopStream();
             stream_handler.removeCallbacks(stream_runnable);
         }
-
+        try {
+            mcs.leaveGroup(multicastGroup);
+        } catch (Exception e) {
+            Log.i(TAG, "Failed to leave multicast group");
+        }
         mapWidget.onPause();
         super.onPause();
     }
@@ -792,6 +857,11 @@ public class CompleteWidgetActivity extends Activity {
             stream_handler.removeCallbacks(stream_runnable);
         }
 
+        try {
+            mcs.leaveGroup(multicastGroup);
+        } catch (Exception e) {
+            Log.i(TAG, "Failed to leave multicast group");
+        }
         mapWidget.onDestroy();
         super.onDestroy();
     }

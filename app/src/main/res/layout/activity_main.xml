@@ -175,6 +175,16 @@
                 android:textColor="@color/white"
                 android:textSize="15sp"
                 android:checked="false"/>
+            <CheckBox
+                android:id="@+id/NoServer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:padding="14dp"
+                android:text="@string/multicast_only"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:checked="false" />
             <!--
                 <EditText
                     android:id="@+id/edittext_numThreads"
@@ -194,15 +204,7 @@
                     android:textColor="@color/white"
                     android:textColorHint="@android:color/white"
                     android:textSize="15sp" />
-            <CheckBox
-                android:id="@+id/option2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:padding="14dp"
-                android:text="option2"
-                android:textColor="@color/white"
-                android:textSize="15sp" />
+
             <CheckBox
                 android:id="@+id/option3"
                 android:layout_width="wrap_content"
