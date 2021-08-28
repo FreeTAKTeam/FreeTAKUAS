@@ -81,17 +81,6 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
 
                 if (CotType.equalsIgnoreCase("sensor")) {
                     // sensor
-                    /*
-                    <event uid="62df51a0-0150-11ec-b1d3-a11d7a026313" type="a-f-A-M-H-Q" how="m-g" start="2021-08-20T00:48:51.416706Z" time="2021-08-20T00:48:51.416683Z" stale="2021-08-20T00:49:51.416716Z">
-                        <detail>
-                            <contact callsign="djcombo" />
-                            <sensor elevation="0.0" vfov="60" north="227" roll="0.0" range="0.057289961630759424" azimuth="142.3000030517578" model="Drone Camera" fov="0.0019998476835571253" type="r-e" version="0.6" />
-                            <track course="142.3000030517578" speed="-0.00" slope="0.00" />
-                            <__video url="rtmp://172.30.254.237:1935/live/UAS-djcombo" />
-                        </detail>
-                        <point le="9999999.0" ce="9999999.0" hae="9999999.0" lon="-80.55856936131484" lat="28.055231911152244" />
-                    </event>
-                    */
                     message = String.format("<event uid=\"%s\" type=\"a-f-A-M-H-Q\" how=\"m-g\" start=\"%s\" time=\"%s\" stale=\"%s\">\n" +
                             "                        <detail>\n" +
                             "                            <contact callsign=\"%s\" />\n" +
@@ -101,21 +90,8 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                             "                        </detail>\n" +
                             "                        <point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"%f\" lat=\"%f\" />\n" +
                             "                    </event>", uid, startTime, time, staleTime, name, altitude, camera_fov, distance, heading, fov, heading, name, longitude, latitude);
-
-                    //message = String.format("<event uid=\"%s_sensor\" type=\"a-f-A-M-H-Q\" how=\"m-g\" start=\"%s\" time=\"%s\" stale=\"%s\"><detail><contact callsign=\"%s\" /><sensor elevation=\"%f\" vfov=\"%s\" north=\"%f\" roll=\"0.0\" range=\"%f\" azimuth=\"%f\" model=\"Drone Camera\" fov=\"%f\" type=\"r-e\" version=\"0.6\" /><track course=\"%f\" speed=\"-0.00\" slope=\"0.00\" /><__video url=\"udp://239.1.1.221:1234/live/UAS-%s\" /></detail><point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"%f\" lat=\"%f\" /></event>", uid, time, staleTime, time, name, altitude, camera_fov, heading, distance, heading, fov, heading, name, longitude, latitude);
-
                 } else if (CotType.equalsIgnoreCase("SPI")) {
                     // SPI
-                    /*
-                    <event uid="62df51a1-0150-11ec-b1d3-a11d7a026313" type="b-m-p-s-p-i" how="m-g" start="2021-08-20T00:48:50.951156Z" time="2021-08-20T00:48:50.951112Z" stale="2021-08-20T00:49:50.951184Z">
-                        <detail>
-                        <precisionlocation altsrc="GPS" />
-                            <contact callsign="djcombo_SPI" />
-                            <link uid="62df51a0-0150-11ec-b1d3-a11d7a026313" relation="p-p" type="a-f-A-M-H-Q" />
-                        </detail>
-                        <point le="9999999.0" ce="9999999.0" hae="9999999.0" lon="-80.55867880994495" lat="28.05522499487069" />
-                    </event>
-                    */
                     double[] spiLatLng = parent.moveLatLng(latitude, longitude, range, heading);
                     message = String.format("<event uid=\"%s-SPI\" type=\"b-m-p-s-p-i\" how=\"m-g\" start=\"%s\" time=\"%s\" stale=\"%s\">\n" +
                             "                        <detail>\n" +
@@ -128,18 +104,6 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
 
                 } else if (CotType.equalsIgnoreCase("video_on")) {
                     // Video on
-                    /*
-                    <event uid="544085c4-0150-11ec-b1d3-a11d7a026313" type="b-i-v" how="m-g" start="2021-08-20T00:48:26.417822Z" time="2021-08-20T00:48:26.417683Z" stale="2021-08-20T00:49:26.417874Z">
-                        <detail>
-                            <contact callsign="Video stream from djcombo" />
-                            <link uid="544085c4-0150-11ec-b1d3-a11d7a026313" production_time="2021-08-20T00:49:26Z" />
-                            <__video>
-                                <ConnectionEntry uid="544085c4-0150-11ec-b1d3-a11d7a026313" path="/live/UAS-djcombo" protocol="rtmp" address="172.30.254.237" port="1935" alias="Video stream from djcombo" />
-                            </__video>
-                        </detail>
-                        <point le="9999999.0" ce="9999999.0" hae="9999999.0" lon="0" lat="0" />
-                    </event>
-                    */
                     message = String.format("<event uid=\"%s-video\" type=\"b-i-v\" how=\"m-g\" start=\"%s\" time=\"%s\" stale=\"%s\">\n" +
                             "                        <detail>\n" +
                             "                            <contact callsign=\"Video stream from %s\" />\n" +
@@ -152,7 +116,6 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                             "                    </event>", uid, startTime, time, staleTime, name, uid, time, uid, name, name);
                 } else if (CotType.equalsIgnoreCase(("geoObject"))) {
                     // GeoObject
-                    //<event version="2.0" uid="94067db8-076a-11ec-b1d3-a11d7a026313" type="a-u-G" how="h-g-i-g-o" start="2021-08-27T19:11:28.955667Z" time="2021-08-27T19:11:28.955627Z" stale="2021-08-27T20:51:28.955884Z"><detail><contact callsign="Bravo-0" /></detail><point le="9999999.0" ce="9999999.0" hae="9999999.0" lon="-80.5585624417065" lat="28.055229448489705" /></event>
                     message = String.format("<event version=\"2.0\" uid=\"%s_%s\" type=\"a-%s-G\" how=\"h-g-i-g-o\" start=\"%s\" time=\"%s\" stale=\"%s\"><detail><contact callsign=\"%s\" /></detail><point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"%f\" lat=\"%f\" /></event>", uid, name.split("_")[0], name.split("_")[1].substring(0,1), startTime, time, staleTime, name, longitude, latitude);
                 }
 
