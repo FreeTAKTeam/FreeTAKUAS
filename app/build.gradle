@@ -22,16 +22,16 @@ def droneName = properties.getProperty('DRONENAME')
 
 def versionMajor = 1
 def versionMinor = 4
-def versionPatch = 9
+def versionPatch = 10
+def version_code = versionMajor * 10000 + versionMinor * 100 + versionPatch
+
 
 android {
     compileSdkVersion 30
     buildToolsVersion '30.0.2'
     defaultConfig {
         applicationId "org.FreeTak.FreeTAKUAS"
-        versionCode versionMajor * 10000
-        + versionMinor * 100
-        + versionPatch
+        versionCode version_code
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
         manifestPlaceholders = [djiKey: djiKey, hereKey: hereKey, hereToken: hereToken, hereLic: hereLic]
         buildConfigField "String", "FTSIP", ftsIP
@@ -60,7 +60,8 @@ android {
     buildTypes {
         release {
             resValue "string", "app_version", "${defaultConfig.versionName}"
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }

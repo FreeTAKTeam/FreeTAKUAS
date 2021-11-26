@@ -100,20 +100,19 @@ public class SendCotTask extends AsyncTask<Object, Void, String> {
                             "                            <link uid=\"%s\" relation=\"p-p\" type=\"a-f-A-M-H-Q\" />\n" +
                             "                        </detail>\n" +
                             "                        <point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"%f\" lat=\"%f\" />\n" +
-                            "                    </event>",uid, startTime, time, staleTime, name, uid, spiLatLng[1], spiLatLng[0]);
-
-                } else if (CotType.equalsIgnoreCase("video_on")) {
+                            "                    </event>", uid, startTime, time, staleTime, name, uid, spiLatLng[1], spiLatLng[0]);
+                } else if (CotType.equalsIgnoreCase("start_stream")) {
                     // Video on
                     message = String.format("<event uid=\"%s-video\" type=\"b-i-v\" how=\"m-g\" start=\"%s\" time=\"%s\" stale=\"%s\">\n" +
                             "                        <detail>\n" +
                             "                            <contact callsign=\"Video stream from %s\" />\n" +
                             "                            <link uid=\"%s_video\" production_time=\"%s\" />\n" +
                             "                            <__video>\n" +
-                            "                                <ConnectionEntry uid=\"%s-video\" path=\"/live/UAS-%s\" protocol=\"udp\" address=\"239.1.1.221\" port=\"1234\" alias=\"Video stream from %s\" />\n" +
+                            "                                <ConnectionEntry uid=\"%s-video\" path=\"/live/UAS-%s\" protocol=\"udp\" address=\"%s\" port=\"1935\" alias=\"Video stream from %s\" />\n" +
                             "                            </__video>\n" +
                             "                        </detail>\n" +
                             "                        <point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"0\" lat=\"0\" />\n" +
-                            "                    </event>", uid, startTime, time, staleTime, name, uid, time, uid, name, name);
+                            "                    </event>", uid, startTime, time, staleTime, name, uid, time, uid, name, camera_fov, name); // hijacked camera_fov for rtmp_ip
                 } else if (CotType.equalsIgnoreCase(("geoObject"))) {
                     // GeoObject
                     message = String.format("<event version=\"2.0\" uid=\"%s_%s\" type=\"a-%s-G\" how=\"h-g-i-g-o\" start=\"%s\" time=\"%s\" stale=\"%s\"><detail><contact callsign=\"%s\" /></detail><point le=\"9999999.0\" ce=\"9999999.0\" hae=\"9999999.0\" lon=\"%f\" lat=\"%f\" /></event>", uid, name.split("_")[0], name.split("_")[1].substring(0,1), startTime, time, staleTime, name, longitude, latitude);

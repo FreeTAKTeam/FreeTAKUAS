@@ -425,8 +425,7 @@ public class CompleteWidgetActivity extends Activity {
 
         l = DJISDKManager.getInstance().getLiveStreamManager();
         stream_toggle = findViewById(R.id.stream_toggle);
-        if (!multicast)
-            stream_toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        stream_toggle.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 stream_toggle.setChecked(true);
                 stream_enabled = true;
@@ -466,7 +465,10 @@ public class CompleteWidgetActivity extends Activity {
                                 stream_handler.removeCallbacks(stream_runnable);
                             }
                         } else if (l.isStreaming() && rc ==0){
-                            new SendCotTask(CompleteWidgetActivity.this).execute("start_stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
+                            if (multicast)
+                                new SendCotTask(CompleteWidgetActivity.this).execute("start_stream", drone_name, droneLocationAlt, droneLocationLat, droneLocationLng, droneDistance, droneHeading, rtmp_ip.split(":")[0], gimbalPitch, MulticastUID);
+                            else
+                                new SendCotTask(CompleteWidgetActivity.this).execute("start_stream", FTS_IP, FTS_APIKEY, drone_name, rtmp_ip);
                             Toast.makeText(getApplicationContext(), "RTMP Stream Established Successfully", Toast.LENGTH_SHORT).show();
                         } else {
                             Toast.makeText(getApplicationContext(), "RTMP Stream failed to start", Toast.LENGTH_SHORT).show();
@@ -685,7 +687,9 @@ public class CompleteWidgetActivity extends Activity {
     }
 
     public String getCameraFov() {
-        return droneFoVs.get(DJISDKManager.getInstance().getProduct().getModel().toString()).toString();
+        if (DJISDKManager.getInstance().getProduct() != null)
+            return droneFoVs.get(DJISDKManager.getInstance().getProduct().getModel().toString()).toString();
+        return "60";
     }
 
     private boolean initFlightController() {

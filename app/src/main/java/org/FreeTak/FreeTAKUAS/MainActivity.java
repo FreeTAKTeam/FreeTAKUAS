@@ -213,14 +213,12 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_NOSERVER, true).apply();
                 useMulticast = true;
                 FtsIpEditText.setText("multicast mode");
-                RtmpIpEditText.setText("multicast mode");
                 FtsApiEditText.setText("multicast mode");
             } else {
                 PreferenceManager.getDefaultSharedPreferences(MainActivity.this).edit().putBoolean(LAST_USED_NOSERVER, false).apply();
                 useMulticast = false;
                 FtsIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_IP, ""));
                 FtsApiEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_FTS_API, ""));
-                RtmpIpEditText.setText(PreferenceManager.getDefaultSharedPreferences(this).getString(LAST_USED_RTMP_IP, ""));
             }
             enable_controller_button();
         });
@@ -432,15 +430,17 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
         if (!useMulticast) {
             handleFtsIPTextChange();
             handleFtsApiKeyTextChange();
-            handleRtmpIpTextChange();
         }
+        handleRtmpIpTextChange();
         handleDroneNameTextChange();
 
+        // worker to make sure the button gets enabled
         button_handler.postDelayed(button_runnable = () -> {
             button_handler.postDelayed(button_runnable, 500);
             enable_controller_button();
         }, 500);
 
+        // worker to make sure the FTS server supports FTSUAS
         server_handler.postDelayed(server_runnable = () -> {
             server_handler.postDelayed(server_runnable, 500);
             if ((ready & 16) == 16) {
@@ -448,15 +448,18 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 return;
             }
 
-            if (useMulticast) return;
-            Thread apicheck = new Thread(() -> server_version_supported());
-            if (!apicheck.isAlive() && ((ready & 3) == 3)) // make sure ftsIp and ftsApikey are set
-                try {
-                    apicheck.start();
-                } catch(IllegalThreadStateException e) {
-                    Log.i(TAG, String.format("Thread error: %s",e));
-                }
-            apicheck = null;
+            if (useMulticast) {
+                return;
+            } else {
+                Thread apicheck = new Thread(() -> server_version_supported());
+                if (!apicheck.isAlive() && ((ready & 3) == 3)) // make sure ftsIp and ftsApikey are set
+                    try {
+                        apicheck.start();
+                    } catch (IllegalThreadStateException e) {
+                        Log.i(TAG, String.format("Thread error: %s", e));
+                    }
+                apicheck = null;
+            }
         }, 500);
 
     }
@@ -661,7 +664,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             try {
                 JSONObject content = new JSONObject(ResponseObject.get("Content").toString());
                 apiversion = content.get("APIVersion").toString();
-                if (Float.parseFloat(apiversion) < 1.9f) {
+                if (Integer.parseInt(apiversion.replace(".","")) < 190) {
                     Log.i(TAG, String.format("FTS version %s does not support FreeTakUAS",apiversion));
                     return;
                 }
@@ -685,7 +688,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             findViewById(R.id.complete_ui_widgets).setEnabled(true);
             button_handler.removeCallbacks(button_runnable);
             return true;
-        } else if (useMulticast && (ready & 8) == 8) {
+        } else if (useMulticast && (ready & 12) == 12) {
             ((Button) findViewById(R.id.complete_ui_widgets)).setText(R.string.uas_button_enabled);
             findViewById(R.id.complete_ui_widgets).setEnabled(true);
             button_handler.removeCallbacks(button_runnable);
