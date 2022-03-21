@@ -27,7 +27,10 @@ All fields are required to be populated in order to proceed to the drone flight 
 
 Once all of the configurations are entered and the SDK registers and the controller inits the UAS button will be enabled
 
+# Object detection
+![unknown](https://user-images.githubusercontent.com/79813408/159282829-5653f01b-e96b-4fba-b971-94f699a797f8.png)
+
+
 # Roadmap / New Feature Ideas
-1) Multicast support for use without FTS
-2) Automatic COT placement when using Object Detection
-3) ATAK Plugin to display everything in a DropDownReceiver
+1) Automatic COT placement when using Object Detection
+2) ATAK Plugin to display everything in a DropDownReceiver
