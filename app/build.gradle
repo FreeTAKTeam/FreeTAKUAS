@@ -22,7 +22,7 @@ def droneName = properties.getProperty('DRONENAME')
 
 def versionMajor = 1
 def versionMinor = 4
-def versionPatch = 10
+def versionPatch = 14
 def version_code = versionMajor * 10000 + versionMinor * 100 + versionPatch
 
 
@@ -46,7 +46,7 @@ android {
         ndk {
             // On x86 devices that run Android API 23 or above, if the application is targeted with API 23 or
             // above, FFmpeg lib might lead to runtime crashes or warnings.
-            abiFilters 'arm64-v8a' //, 'armeabi-v7a' //,'x86'
+            abiFilters 'arm64-v8a', 'armeabi-v7a' //,'x86'
         }
     }
     signingConfigs {
@@ -60,8 +60,8 @@ android {
     buildTypes {
         release {
             resValue "string", "app_version", "${defaultConfig.versionName}"
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
@@ -122,17 +122,7 @@ android {
 project.ext.ASSET_DIR = projectDir.toString() + '/src/main/assets'
 
 dependencies {
-    implementation ('com.dji:dji-uxsdk:4.14', {
-        exclude module: 'dji-sdk'
-
-        /**
-         * Uncomment the following line to exclude amap from the app.
-         * Note that Google Play Store does not allow APKs that include this library.
-         */
-        exclude group: 'com.amap.api'
-        exclude group: 'com.mapbox.mapboxsdk'
-    })
-    implementation ('com.dji:dji-sdk:4.15', {
+    implementation ('com.dji:dji-sdk:4.16', {
         /**
          * Uncomment the "library-anti-distortion" if your app does not need Anti Distortion for Mavic 2 Pro and Mavic 2 Zoom.
          * Uncomment the "fly-safe-database" if you need database for release, or we will download it when DJISDKManager.getInstance().registerApp
@@ -142,7 +132,21 @@ dependencies {
         exclude module: 'library-anti-distortion'
         exclude module: 'fly-safe-database'
     })
-    compileOnly ('com.dji:dji-sdk-provided:4.15')
+
+    compileOnly ('com.dji:dji-sdk-provided:4.16')
+
+    implementation ('com.dji:dji-uxsdk:4.16', {
+        exclude module: 'library-anti-distortion'
+        exclude module: 'dji-sdk'
+        exclude module: 'fly-safe-database'
+
+        /**
+         * Uncomment the following line to exclude amap from the app.
+         * Note that Google Play Store does not allow APKs that include this library.
+         */
+        exclude group: 'com.amap.api'
+        exclude group: 'com.mapbox.mapboxsdk'
+    })
 
     implementation 'org.greenrobot:eventbus:3.0.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
@@ -154,7 +158,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     //HERE maps
-    implementation files('libs/HERE-sdk-3.15.0.aar')
+    implementation files('libs/HERE-sdk-3.15.0.aar') {
+
+    }
 
     // TensorFlow Lite
     implementation 'org.tensorflow:tensorflow-lite-task-vision:0.2.0'

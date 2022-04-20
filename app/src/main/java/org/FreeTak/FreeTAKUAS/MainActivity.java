@@ -417,7 +417,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             public void afterTextChanged(Editable s) {
                 if (s != null && s.toString().contains("\n")) {
                     // the user is done typing.
-                    // remove new line characcter
+                    // remove new line character
                     final String currentText = DroneNameEditText.getText().toString();
                     DroneNameEditText.setText(currentText.substring(0, currentText.indexOf('\n')));
                     handleDroneNameTextChange();
@@ -455,10 +455,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
                 if (!apicheck.isAlive() && ((ready & 3) == 3)) // make sure ftsIp and ftsApikey are set
                     try {
                         apicheck.start();
-                    } catch (IllegalThreadStateException e) {
+                        apicheck.join();
+                    } catch (IllegalThreadStateException | InterruptedException e) {
                         Log.i(TAG, String.format("Thread error: %s", e));
                     }
-                apicheck = null;
             }
         }, 500);
 
@@ -637,7 +637,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             urlConnection.setDoInput(true);
             urlConnection.setRequestMethod("GET");
             urlConnection.setRequestProperty("Content-Type", "application/json");
-            urlConnection.setRequestProperty("Authorization", ftsapikey);
+            //urlConnection.setRequestProperty("Authorization", ftsapikey);
 
             InputStream inputStream;
             // get stream
@@ -646,6 +646,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Popu
             } else {
                 inputStream = urlConnection.getErrorStream();
             }
+
             // parse stream
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
             String temp, response = "";

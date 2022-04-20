@@ -63,7 +63,6 @@
                 android:gravity="center"
                 android:hint="@string/fts_ip"
                 android:imeOptions="actionDone"
-                android:maxLength="20"
                 android:maxLines="1"
                 android:padding="2dp"
                 android:textColor="@color/white"
