@@ -34,3 +34,12 @@ Once all of the configurations are entered and the SDK registers and the control
 # Roadmap / New Feature Ideas
 1) Automatic COT placement when using Object Detection
 2) ATAK Plugin to display everything in a DropDownReceiver
+
+
+## build
+If a developer wishes to build this app, they must construct a `local.properties` file on their local device. They must generate a few API keys and tokens from various sites such as [DJI](https://developer.dji.com) and [Here](https://developer.here.com/), among others
+
+<img width="578" alt="Screen Shot 2022-05-22 at 3 39 49 PM" src="https://user-images.githubusercontent.com/25494111/169713145-51bd17c4-ee71-42d1-a4f8-de822b43a38a.png">
+
+
+It may be helpful to include documentation that informs a developer what API keys and values are needed and how to properly construct their `local.properties` file
